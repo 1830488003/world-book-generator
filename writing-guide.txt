@@ -1,0 +1,560 @@
+# 世界构建与故事设计高级指南
+
+这是从您提供的黄金标准 `World Builder 1.4 (6).json` 中提取的、专注于内容创作思想与结构的核心指南。它将作为最高优先级的写作指导，注入到AI的每一次思考中。
+
+---
+## 第一部分：世界构建工作流
+world_building_workflow:
+  scope_identification:
+    action: 确定世界观范围
+    scale_types:
+      - micro_setting: 单一场所或小型封闭环境(医院、鬼屋、学校、小镇等)
+      - mid_setting: 中型区域或组织(城市、企业、帮派等)
+      - macro_setting: 完整世界观(国家、星球、宇宙等)
+    
+    applicable_sections:
+      micro_setting:
+        required: ["core_rules", "environment", "mechanics"]
+        optional: ["items", "factions", "events"]
+        omitted: ["locations"]
+      mid_setting:
+        required: ["core_rules", "environment", "locations", "factions"]
+        optional: ["items", "events", "mechanics"]
+        omitted: []
+      macro_setting:
+        required: ["core_rules", "environment", "locations", "factions", "events"]
+        optional: ["items", "mechanics"]
+        omitted: []
+
+  template_generation:
+    action: 生成完整世界书模板
+    format: 代码块包裹的YAML结构
+    components:
+      metadata:
+        - world_name: 世界的名称
+        - theme_tags: 使用管道符(|)分隔的主题标签列表
+        - tone: 世界观的整体基调与氛围
+      
+      sections:
+        core_rules:
+          description: 这个世界运作的基本法则与底层设定
+          structure_requirements:
+            - 每条规则使用简洁清晰的语言描述
+            - 优先列出对角色行为有直接影响的规则
+            - 明确标注不可违背的"物理法则"与可变的"社会规则"
+          
+        environment:
+          description: 世界的自然环境、气候、地理特征等
+          structure_requirements:
+            - 使用管道符(|)分隔不同环境特征
+            - 包含环境对居民生活的直接影响
+            - 描述环境的特殊现象及其出现条件
+        
+        locations:
+          description: 世界中的重要地点、城市、区域等
+          structure_requirements:
+            - 每个地点包含名称、简述、特点和重要性
+            - 描述地点间的地理关系与交通方式
+            - 标注地点的文化特色与经济活动
+        
+        factions:
+          description: 世界中的组织、势力、国家等
+          structure_requirements:
+            - 包含势力的名称、理念、结构和影响力
+            - 描述势力间的关系与冲突来源
+            - 明确势力的标志性特征与行为模式
+        
+        items:
+          description: 世界中的特殊物品、技术、资源等
+          structure_requirements:
+            - 详述物品的起源、功能与限制
+            - 分析物品对社会结构的影响
+            - 说明物品的获取难度与分布情况
+        
+        events:
+          description: 世界历史中的关键事件与时间线
+          structure_requirements:
+            - 以时间线形式组织历史事件
+            - 使用破折号(-)作为列表标记
+            - 分析事件如何塑造了当前世界状态
+        
+        mechanics:
+          description: 世界特有的机制、魔法系统、技术体系等
+          structure_requirements:
+            - 详细说明机制的工作原理与限制
+            - 阐述普通人如何接触与使用这些机制
+            - 分析机制对社会阶层与权力分配的影响
+
+  # 微型场景专用组件定义
+  micro_setting_components:
+    environment:
+      description: 场所的物理环境与氛围
+      structure_requirements:
+        - 描述场所的整体布局与空间结构
+        - 说明场所的感官元素(光线、声音、气味等)
+        - 解释环境如何影响人物行为与心理
+    
+    mechanics:
+      description: 场所特有的规则与运作方式
+      structure_requirements:
+        - 详述场所内可能发生的特殊现象
+        - 说明进入、离开或在场所内活动的规则
+        - 描述环境与人物互动的独特机制
+    
+    factions:
+      description: 场所内的人物群体与权力结构
+      structure_requirements:
+        - 描述场所内的主要人物类型与关系
+        - 说明不同群体间的互动模式与冲突
+        - 解释权力分配与决策机制
+    
+    items:
+      description: 场所内的特殊物品与装置
+      structure_requirements:
+        - 列出场所中的标志性物品与用途
+        - 说明这些物品如何影响场所的氛围与功能
+        - 描述物品获取或使用的条件
+
+  conflict_resolution:
+    trigger: 用户提出与现有设定冲突的新元素时
+    analysis:
+      - 检测新元素是否与世界核心法则相冲突
+      - 评估新元素是否破坏世界观的内部一致性
+      - 分析新元素是否改变世界的核心主题与基调
+    response_strategy:
+      conflict_detected:
+        - 明确指出新元素与哪些现有核心设定冲突
+        - 分析可能导致的问题:
+          * 破坏世界的内部逻辑
+          * 改变世界的核心吸引力
+          * 与已建立的历史事件产生逻辑矛盾
+        - 提供调和方案，修改新元素使其符合世界逻辑
+      no_conflict:
+        - 将新元素自然融入现有世界结构
+        - 解释新元素如何丰富或拓展现有世界观
+
+  world_refinement:
+    trigger: 用户提供简单世界概念或仅部分设定时
+    expansion_approach:
+      - 自动扩展核心概念，保持原始理念完整
+      - 为每个关键部分创建3-5个重要条目
+      - 确保各部分之间存在有机联系
+      - 保持世界的独特性与内部一致性
+    inquiry_guidelines:
+      max_questions: 3-5个关键问题
+      question_criteria:
+        - 针对世界基础设定的模糊点
+        - 关于世界中主要冲突来源的具体化
+        - 探询世界特殊机制的运作边界
+      question_structure:
+        - 问题焦点(如"魔法系统的能量来源")
+        - 问题原因(如"当前描述过于模糊，缺乏限制")
+        - 预期效果(如"确立明确的魔法限制以增强故事张力")
+
+  adaptive_refinement:
+    micro_setting_approach:
+      - 专注于创造沉浸式氛围而非完整世界逻辑
+      - 强调感官细节与情绪体验
+      - 设计3-5个能体现场景特点的关键互动机制
+      - 创造适合该场景的独特术语与规则
+      
+    inquiry_guidelines_micro:
+      focus_questions:
+        - 关于场所的历史与背景故事
+        - 环境如何影响人物心理状态
+        - 场所内可能发生的特殊事件类型
+        - 不同时间段场所的变化规律
+
+---
+## 第二部分：蓝灯与绿灯协同设计原则
+# World Book Entry Design Example: Using Blue and Green Lights Together
+
+## Principle Explanation
+When an entry uses a green light (Normal/conditional trigger type), there must be a blue light entry (Constant trigger type) that introduces this entry. This ensures that relevant content can be properly activated through the recursive scanning mechanism.
+
+Prohibited scenario: A green light entry not mentioned in any blue light entry. For example, if there's a detailed green light entry about Character X, but Character X is not mentioned in any blue light entry such as character introductions.
+
+Reason: This would prevent Character X from ever being mentioned in the story!
+
+This principle applies to:
+- Organizations, factions, countries in the world
+- Important locations, cities, regions in the world
+- Special items, technologies, resources in the world
+- Important characters/enemies with their own entries
+
+## Design Your World Book Entries Following This Pattern:
+1. Create blue light (Constant) entries for all major world elements
+2. Ensure each green light (Normal) entry is referenced in at least one blue light entry
+3. Use this hierarchical structure to ensure all conditional content can be properly triggered
+
+---
+## 第三部分：互动故事生成系统指南
+【# 如何为酒馆世界卡设计主线故事
+
+为酒馆世界卡设计一个既有结构又能适应{{user}}输入的主线故事需要特殊的设计思路。传统的线性章节大纲不太适合这种高度交互式的体验。以下是一些策略，可以创建既有方向又保持灵活性的故事结构：
+
+## 1. 使用分支节点而非线性大纲
+
+设计故事时，考虑创建关键的"故事节点"而非传统章节。这些节点代表故事中的重要转折点，但它们之间的路径可以根据{{user}}的选择而变化。
+
+## 2. 设置明确的角色目标和动机
+
+为{{user}}设定清晰的长期目标和动机，无论用户如何互动，{{user}}都会试图实现这些目标。这样可以保持故事的一致性，同时允许路径的灵活性。
+
+## 3. 利用世界设定作为故事框架
+
+创建一个详细的世界背景，包括重要地点、事件和潜在冲突。这提供了一个故事发生的框架，无论玩家如何引导对话。
+
+## 4. 在角色卡中嵌入示例对话
+
+在角色设计中加入示例对话，展示角色如何引导故事走向关键节点。这些示例可以训练AI理解如何在保持角色一致性的同时推进主线故事。
+
+## 5. 使用世界书条目引导故事方向
+
+利用世界书条目插入深度来提供背景情境和当前情节提示，帮助AI保持对主线故事的关注，同时适应{{user}}的输入。
+
+```
+例如：故事角色正在寻找失落的神器，无论对话如何发展，都会在适当时机提到这个目标。
+```
+
+## 6. 设计被动响应而非主导叙事
+
+指导故事角色保持被动响应式的叙事方式，让{{user}}感觉他们在引导故事，同时故事角色通过反应和提问来引导{{user}}走向主线节点。
+
+```
+例如：不是"我们必须去城堡"，而是"你认为我们应该调查城堡的传闻吗？据说那里藏着线索..."
+```
+
+## 7. 创建关键事件触发器
+
+设计一系列可以在特定条件下触发的关键事件。这些事件可以根据对话中出现的特定主题、玩家表达的意图或角色关系发展来激活。
+
+## 实际应用建议
+
+1. **设定3-5个必经的故事节点**，但节点间的路径保持开放
+2. **为每个节点创建多个可能的触发条件**，增加故事的适应性
+3. **在角色描述中植入主线元素**，使其成为角色人格的自然部分
+4. **利用开放式问题**引导{{user}}走向主线，而非强制指令
+5. **在AI回复中平衡即时响应与主线推进**，让故事自然展开
+6. **条目里要提示禁止剧情擅自过度推进，导致玩家还没做出选择，剧情就擅自推进到其他发展导致后续条目接不上**
+
+通过这种方式，创建一个既有方向又能根据玩家输入调整的动态故事体验。】
+
+---
+## 第四部分：世界构建模板范例
+这些范例展示了如何为不同规模的世界构建详细、结构化的条目。
+
+### 宏观世界 (Macro World) 模板
+examples:
+
+uid: 001
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 元数据 - [世界/大陆名称]
+  Comma_separated_list: 世界信息,大陆设定,元数据,世界观,[世界/大陆名称]
+content: |
+  world_name: [世界/大陆名称]
+  theme_tags: 异世界 | 大陆 | [主题1] | [主题2] | [主题3] # 例如: 魔法 | 战争 | 探索 | 神话 | 种族冲突
+  tone: [基调1] | [基调2] | [基调3] # 例如: 史诗 | 黑暗 | 神秘 | 奇幻 | 严酷
+
+uid: 002
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 核心规则 - 物理与魔法
+  Comma_separated_list: 核心规则,物理法则,魔法原理,能量体系,世界基础设定,[世界/大陆名称]规则
+content: |
+  # [世界/大陆名称]的基础物理与魔法法则
+  physical_laws: [基础物理描述] # 例如: 标准类地重力, 时间线性流逝, 特定区域可能存在物理异常点
+  magic_system_name: [魔法体系名称] # 例如: 源能魔法, 符文系统, 血脉之力, 元素沟通
+  magic_source: [魔法来源] # 例如: 环境魔力(玛那), 个人精神力, 神祇赐予, 特殊物品/血脉
+  magic_principles: [魔法基本原理与限制] # 例如: 等价交换原则, 施法需要咒语/手势/媒介, 精神消耗与反噬风险, 存在禁忌领域
+  magic_availability: [魔法普及度与使用者] # 例如: 仅少数精英掌握, 普遍存在但威力不同, 特定种族天赋, 需要学习或传承
+
+uid: 003
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 核心规则 - 社会与文化
+  Comma_separated_list: 核心规则,社会规范,文化背景,通用价值观,种族关系,[世界/大陆名称]社会
+content: |
+  # [世界/大陆名称]的通用社会规范与文化基调
+  dominant_social_structure: [主流社会结构] # 例如: 封建王国制, 城邦联盟, 部落氏族制, 神权统治
+  common_values: [普遍价值观] # 例如: 崇尚力量, 注重荣誉, 信仰自由, 实用主义至上, 尊重传统
+  inter_species_relations: [主要种族间关系] # 例如: 长期冲突, 表面和平实则隔离, 相对融合, 存在主从关系
+  technology_level: [平均科技水平] # 例如: 中世纪水平, 黑铁时代, 存在魔法驱动的特殊技术, 发展不均衡
+  common_languages: [通用语/主要语言] # 例如: 大陆通用语, 各大王国/种族有自己的语言
+
+uid: 004
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 环境 - 地理气候概览
+  Comma_separated_list: 环境,地理,气候,地形,大陆地貌,[世界/大陆名称]环境
+content: |
+  # [世界/大陆名称]的宏观地理与气候特征 (使用PList格式)
+  [主要大陆/区域A(例如: 中央王国区域): 气候类型(温带), 地形特征(平原为主, 穿插丘陵森林), has(主要河流, 大型湖泊), 适宜农耕, 人口密集]
+  [主要大陆/区域B(例如: 北境冻土): 气候类型(寒带), 地形特征(山脉, 冰川, 冻原), has(稀有矿脉, 极光现象), 环境恶劣, 人口稀少]
+  [主要大陆/区域C(例如: 南部雨林/沙漠): 气候类型(热带/干旱), 地形特征(茂密丛林/广阔沙丘), has(奇异生物, 古代遗迹), 资源独特, 文明形态特殊]
+  [主要大陆/区域D(例如: 东部群岛/沿海): 气候类型(海洋性), 地形特征(岛屿众多, 海岸线曲折), has(重要港口, 海洋资源), 贸易发达, 海上力量重要]
+  global_phenomena: [全球性/区域性特殊现象] # 例如: 周期性能量潮汐, 空中浮岛, 季节性魔物迁徙, 巨大风暴带
+
+uid: 005
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 环境 - 生态系统与资源
+  Comma_separated_list: 环境,生态,动植物,魔物,资源分布,[世界/大陆名称]生态
+content: |
+  # [世界/大陆名称]的生态系统与主要资源 (使用PList格式)
+  dominant_flora_fauna: [代表性动植物群] # 例如: 常见中世纪生物 | 存在巨型昆虫 | 魔法植物普遍 | 特有坐骑生物
+  monsters_and_beasts: [魔物/特殊生物概述] # 例如: 存在龙类 | 元素生物常见 | 不死生物是主要威胁 | 深海/地底有未知巨兽
+  key_natural_resources: [关键自然资源及其分布] # 例如: [金属矿产: 主要分布于[区域B山脉]], [魔法水晶: 零星分布于[能量节点]], [稀有木材: 集中于[区域C雨林]], [特殊药材: 各地均有但种类不同]
+  environmental_hazards: [主要环境灾害/危险区域] # 例如: 毒瘴森林, 活火山地带, 扭曲空间裂缝, 受诅咒的土地
+
+uid: 006
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 主要地区与地点概述
+  Comma_separated_list: 地点,区域,城市,地标,关键地点,[世界/大陆名称]地点,[主要王国首都名],[重要贸易城市名],[著名遗迹名],[特殊区域名]
+content: |
+  # [世界/大陆名称]内的重要区域与地点概览 (使用PList格式)
+  [区域A主要城市(例如: 帝都/王城): 政治/文化中心, 位于[地理位置], has(皇宫/议会厅, 大教堂/神殿, 魔法学院/工匠行会), 人口最多, 防御森严, [城市A别名]]
+  [区域B主要城市(例如: 边境要塞/矿业城镇): 军事/资源重镇, 位于[地理位置], has(巨大城墙/矿坑入口, 兵营/工坊, 特殊市场), 民风彪悍, 战略/经济价值高, [城市B别名]]
+  [区域C主要城市(例如: 港口都市/自由城邦): 贸易/交通枢纽, 位于[地理位置], has(大型港口/商贸中心, 多元文化区, 走私者据点), 流动性强, 财富与危险并存, [城市C别名]]
+  [著名自然地标(例如: 世界之脊山脉/无尽大瀑布): 地理奇观, 位于[地理位置], has(独特生态/传说生物, 隐藏道路/试炼之地), 常与传说/冒险相关]
+  [著名古代遗迹(例如: 失落神庙/巨人遗骸): 历史遗留, 位于[地理位置], has(古代技术/魔法残留, 未解之谜/强大守护者), 充满神秘与机遇]
+  [特殊功能区域(例如: 魔法森林/死亡沼泽): 环境独特区域, 位于[地理位置], has(特殊资源/生物, 环境危险/规则异常), 需要特殊准备才能进入]
+
+uid: 007
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 主要种族概述
+  Comma_separated_list: 种族,智慧生命,类人种族,非人种族,[世界/大陆名称]种族,[种族A],[种族B],[种族C]
+content: |
+  # [世界/大陆名称]的主要智慧种族 (使用PList格式)
+  [人类(Human): 分布最广, 适应性强, 社会结构多样, 寿命[平均寿命], 潜力巨大/内部差异大]
+  [精灵(Elf/类似种族): 长寿优雅, 亲近自然/魔法, 居住于[典型聚居地], 擅长[特殊技能], 高傲/神秘]
+  [矮人(Dwarf/类似种族): 强壮坚韧, 精于工匠/采矿, 居住于[典型聚居地], 寿命[平均寿命], 固执/重视传统]
+  [兽人(Orc/类似种族): 力量强大, 部落/氏族结构, 居住于[典型聚居地], 崇尚[核心理念], 好战/生存环境恶劣]
+  [特殊种族A(例如: 龙裔/元素裔): 稀有独特, 具有[特殊能力], 起源[神话/魔法造物], 社会地位[高/低/特殊], [核心特征]]
+  [非人智慧种族B(例如: 智慧史莱姆/构装体): 形态奇特, 思维方式[异于常人], 能力[特殊能力], 社会结构[独特形式], [核心特征]]
+
+uid: 008
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 主要势力与组织概述
+  Comma_separated_list: 势力,组织,国家,王国,教派,公会,[世界/大陆名称]势力,[势力A],[势力B],[势力C]
+content: |
+  # [世界/大陆名称]的主要势力与组织 (使用PList格式)
+  [主要王国/帝国A(例如: 光辉帝国): 统治[主要区域], [政体形式], 核心理念[秩序/扩张], has(强大军队, 完善法律体系, 官方信仰), 主要对手[势力B], [势力A简称]]
+  [主要联盟/共和国B(例如: 自由城邦联合): 控制[主要区域], [政体形式], 核心理念[贸易/自由], has(发达商业网络, 海军/佣兵力量, 多元文化), 主要对手[势力A], [势力B简称]]
+  [主要宗教组织C(例如: 大地母神教): 影响力遍及[区域范围], [组织结构], 核心教义[自然/生命/守护], has(众多信徒, 神殿网络, 特殊神术/知识), 对世俗权力态度[中立/合作/干预], [势力C简称]]
+  [跨国/独立组织D(例如: 冒险者公会/魔法师协会): 分布[广泛/特定区域], [组织目标], 核心业务[任务委托/知识研究], has(成员等级制度, 情报网络, 特殊设施), 政治立场[通常中立], [势力D简称]]
+  [秘密/地下组织E(例如: 暗影兄弟会/古代守护者): 运作方式[隐秘], [组织目标], 核心活动[刺杀/情报/守护秘密], has(秘密据点, 特殊技能/传承), 对其他势力[渗透/对抗/观察], [势力E简称]]
+
+uid: 009
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 重要物品与资源类别
+  Comma_separated_list: 物品,道具,资源,技术,神器,宝物,[世界/大陆名称]物品
+content: |
+  # [世界/大陆名称]的重要物品、资源与技术类别
+  - **魔法媒介/材料**: [常见类型, 例如: 各类元素水晶, 蕴含魔力的生物材料, 特殊金属]
+  - **炼金/药剂**: [常见效果, 例如: 治疗药水, 属性增强剂, 毒药/解药, 特殊效果合剂]
+  - **武器/防具**: [技术水平与特色, 例如: 以附魔武器为主, 存在特殊合金防具, 特定种族拥有独特工艺]
+  - **古代遗物/神器**: [传说中的强大物品, 例如: 神器碎片, 上古文明的装置, 蕴含规则之力的物品]
+  - **关键战略资源**: [影响势力平衡的资源, 例如: 控制性矿脉, 稀有魔法能源, 可驯化的强大生物]
+  - **特殊技术体系**: [独特的科技/魔法工艺, 例如: 构装生命技术, 空间传送网络, 灵魂魔法应用]
+
+uid: 010
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 简史与关键事件
+  Comma_separated_list: 历史,时间线,关键事件,传说时代,近期历史,[世界/大陆名称]历史
+content: |
+  # [世界/大陆名称]的简史与关键转折点
+  - **创世/神话时代**: [世界起源传说, 古老神祇与种族的诞生, 奠定基础规则的事件]
+  - **上古/黄金时代**: [某个强大文明的兴盛, 魔法/技术的巅峰期, 可能的成就与遗产]
+  - **大灾变/黑暗时代**: [导致上古文明衰落/灭亡的事件, 例如: 神战, 天灾, 魔法滥用后果, 世界格局重塑]
+  - **迁徙/建国时代**: [现存主要种族/国家的形成期, 关键的战争与英雄事迹, 奠定当前势力范围]
+  - **近代重要事件**: [近百年内影响深远的事件, 例如: 王国间的重大战争, 新技术的发现, 强大魔物的出现, 改变势力平衡的条约]
+  - **当前状况**: [世界目前的大致局势, 主要的矛盾与潜在危机, 近期发生的值得注意的事件]
+
+uid: 011
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 世界模板 - 核心机制与特殊系统
+  Comma_separated_list: 机制,系统,特殊规则,世界特色,[世界/大陆名称]机制,[机制A],[机制B]
+content: |
+  # [世界/大陆名称]的核心机制与特色系统
+  - **[机制A名称(例如: 灵魂契约)]**: [机制描述: 人物可与特定存在签订契约获得力量], [运作原理: 基于灵魂能量的交换], [限制/代价: 契约束缚, 灵魂损耗风险], [普及度/获取方式: 稀有, 需要特定仪式/天赋]
+  - **[机制B名称(例如: 世界树网络)]**: [机制描述: 连接大陆各地的巨大植物网络, 可传递信息/能量], [运作原理: 基于自然能量流转], [限制/代价: 只有特定种族/职业能接入, 易受污染干扰], [普及度/获取方式: 仅少数势力掌握/利用]
+  - **[机制C名称(例如: 星辰占卜)]**: [机制描述: 通过观察星象预测未来/解读命运], [运作原理: 基于世界规则的某种映射], [限制/代价: 结果模糊/多义, 可能引来不希望的关注], [普及度/获取方式: 需要特殊天赋和知识传承]
+  - **[其他可能机制]**: [例如: 特殊的转生/复活机制, 独特的能量循环系统, 影响心智的环境场域等]
+
+### 中型区域 (Mid-World) 模板
+examples:
+
+uid: 001
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 城市模板 - 元数据
+  Comma_separated_list: 城市模板,城市设定,中型区域,元数据,[城市名称]
+content: |
+  world_name: [城市名称] - 中型区域城市模板
+  theme_tags: 城市 | [主题1] | [主题2] | [主题3] # 例如：工业 | 魔法 | 贸易 | 政治
+  tone: [基调1] | [基调2] # 例如：繁华 | 压抑 | 混乱 | 神秘
+
+uid: 002
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 城市模板 - 核心规则与治理
+  Comma_separated_list: 城市规则,城市法律,治理结构,社会规范,[城市名称]规则
+content: |
+  # [城市名称]的基本运作法则
+  governance_type: [治理形式] # 例如: 市政议会, 世袭城主, 行会联盟, 神权统治
+  primary_laws: [主要法律概述] # 例如: 强调贸易自由但税收严格, 实行宵禁, 禁止公开使用某种魔法/技术
+  social_structure: [社会阶层概述] # 例如: 明显的贫富分化, 以职业或出身划分阶层, 存在特定受歧视群体
+  enforcement_body: [执法力量名称] # 例如: 城市卫队, 治安官系统, 特定行会/教会武装
+
+uid: 003
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 城市模板 - 环境与区域划分
+  Comma_separated_list: 城市环境,地理布局,城区划分,区域,[城市名称]环境,[行政区],[商业区],[住宅区],[工业区],[特殊区域]
+content: |
+  # [城市名称]的地理与区域概览 (使用PList格式)
+  [行政区(中心区/统治区): 政府核心, 地标建筑, has(市政厅, 法院, 主要神殿/教堂, 精英住宅), 防御森严, 秩序井然]
+  [商业区(市场区/贸易区): 经济中心, 交通枢纽, has(大型市场, 行会总部, 银行, 旅店酒馆), 人流密集, 充满活力/鱼龙混杂]
+  [住宅区(平民区/贵族区): 主要居住区域, 根据阶层划分, has(不同规格的住宅, 小公园, 学校, 诊所), 生活气息浓厚/安静私密]
+  [工业区(工匠区/生产区): 生产与制造中心, 可能靠近资源点, has(工厂, 作坊, 仓库, 劳工宿舍), 噪音污染/环境问题]
+  [港口区/城门区(交通枢纽): 对外连接点, 贸易/人员流动, has(码头/城门要塞, 海关/检查站, 仓库, 相关服务设施), 流动性大, 管控严格]
+  [特殊区域1(例如: 贫民窟/旧城区): 城市边缘/被遗忘角落, has(破旧建筑, 黑市入口, 帮派据点), 缺乏管理, 危险与机遇并存]
+  [特殊区域2(例如: 学院区/魔法区): 教育/研究/特殊功能区, has(大学/学院, 图书馆, 实验室, 特殊商店), 文化/知识氛围浓厚, 可能有准入限制]
+
+uid: 004
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 城市模板 - 重要地点与地标
+  Comma_separated_list: 城市地点,地标建筑,重要设施,[城市名称]地点,[市政厅],[中心市场],[大教堂],[城主堡垒]
+content: |
+  # [城市名称]内的关键地点与地标 (使用PList格式)
+  [核心地标(例如: 城主堡垒/市政厅): 权力象征, 城市中心/制高点, has(行政办公室, 会议厅, 可能有监狱/宝库), 守卫严密, 城市象征]
+  [经济中心(例如: 中心市场/大交易所): 贸易核心, 人流汇聚地, has(各类商铺摊位, 钱庄, 信息公告栏), 繁华喧嚣, 商品丰富]
+  [宗教/文化中心(例如: 大教堂/大图书馆): 精神/知识象征, 重要集会场所, has(祈祷大厅/阅览室, 圣物/珍贵藏书, 相关人员住所), 庄严肃穆/书香浓郁]
+  [交通枢纽(例如: 主城门/中心车站/港口): 对外连接点, 交通要道, has(防御工事/站台/码头设施, 检查站, 相关服务点), 人车/船只繁忙]
+  [公用设施(例如: 大竞技场/剧院/公共浴场): 市民娱乐/生活场所, has(表演场地/观众席/浴池), 人气旺盛, 反映市民生活]
+  [灰色地带(例如: 黑市集结点/走私者码头): 非法活动区域, 通常隐蔽, has(秘密交易点, 赃物处理处, 情报贩子), 危险神秘, 规则不同]
+
+uid: 005
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 城市模板 - 主要势力与组织
+  Comma_separated_list: 城市势力,组织,派系,行会,帮派,[城市名称]势力,[统治势力],[商业行会],[宗教组织],[地下势力]
+content: |
+  # [城市名称]内的主要势力与组织 (使用PList格式)
+  [统治势力(例如: 市政议会/城主家族): 掌握最高权力, 制定法律, has(行政机构, 卫队指挥权, 税收权), 维护秩序/追逐权力]
+  [主要商业行会(例如: 商人联合会/工匠协会): 控制关键经济领域, 影响力巨大, has(行会总部, 专属市场/工坊, 内部规则), 追逐利润, 可能干预政治]
+  [主要宗教组织(例如: 主神教会/秘密教派): 影响市民信仰和道德观, 可能掌握特殊力量/知识, has(神殿/教堂/秘密据点, 教士/信徒网络), 精神引导/扩张势力]
+  [地下势力(例如: 盗贼公会/走私帮派): 从事非法活动, 形成地下秩序, has(秘密据点, 线人网络, 黑市渠道), 挑战官方权威, 谋求生存/利益]
+  [平民/劳工组织(例如: 码头工人工会/邻里互助会): 代表底层民众利益, 可能组织抗议/互助, has(集会点, 代表人物), 争取权益/维持生计]
+  [特殊势力(例如: 魔法师协会/佣兵工会): 掌握特殊技能/武力, 独立性较强, has(总部/训练场, 成员登记处, 任务发布点), 提供服务/保持中立/追求特定目标]
+
+### 微观场景 (Micro-World) 模板
+examples:
+
+uid: 001
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 元数据
+  Comma_separated_list: 场所模板,场所设定,微观场景,元数据,[场所名称]
+content: |
+  location_name: [场所名称] # 例如: 废弃医院, 浮空图书馆, 深海实验室
+  location_type: [场所类型] # 例如: 建筑, 自然区域, 载具内部, 异空间碎片
+  theme_tags: 场所 | [主题1] | [主题2] | [主题3] # 例如: 恐怖 | 神秘 | 科幻 | 探索
+  tone: [基调1] | [基调2] # 例如: 压抑 | 宁静 | 危险 | 诡异
+
+uid: 002
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 核心规则
+  Comma_separated_list: 场所规则,场所法则,行为规范,环境限制,[场所名称]规则
+content: |
+  # [场所名称]的基本运作法则
+  entry_conditions: [进入条件] # 例如: 需要特定钥匙, 通过特定仪式, 满足特定身份, 无特殊限制
+  exit_conditions: [离开条件] # 例如: 找到特定出口, 完成特定任务, 时间限制, 无特殊限制
+  behavioral_rules: [行为规范] # 例如: 必须保持安静, 禁止触摸特定物品, 特定时间段禁止活动
+  environmental_laws: [特殊物理/环境规则] # 例如: 重力异常, 时间流速不同, 特定区域存在幻觉, 能量场干扰
+  primary_hazard: [主要危险源] # 例如: 结构不稳定, 危险生物/存在, 致命陷阱, 精神污染
+
+uid: 003
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 环境与区域概览
+  Comma_separated_list: 场所环境,空间布局,区域划分,感官描述,[场所名称]环境,[主要区域],[次要区域],[特殊区域]
+content: |
+  # [场所名称]的内部环境与区域划分 (使用PList格式)
+  overall_layout: [整体布局描述] # 例如: 线性结构, 迷宫式, 中心辐射型, 多层结构
+  dominant_sensory: [主导感官体验] # 例如: 视觉昏暗, 持续低语声, 浓重霉味/消毒水味, 冰冷触感
+  [主要区域A(例如: 大厅/入口区): 功能/特点描述, has(关键设施1, 关键设施2), 氛围描述, [区域A别名]]
+  [主要区域B(例如: 控制室/核心区): 功能/特点描述, has(关键设施3, 关键设施4), 氛围描述, [区域B别名]]
+  [次要区域C(例如: 储藏室/休息区): 功能/特点描述, has(物品点1, 物品点2), 氛围描述, [区域C别名]]
+  [特殊区域D(例如: 禁区/隐藏区): 功能/特点描述, has(特殊现象点, 危险点), 氛围描述, [区域D别名]]
+  ambient_conditions: [环境状况] # 例如: 光线昏暗, 温度低, 空气质量差, 能量波动
+
+uid: 004
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 特殊机制与互动
+  Comma_separated_list: 场所机制,特殊现象,互动方式,环境互动,[场所名称]机制
+content: |
+  # [场所名称]内的独特机制与互动点
+  primary_mechanic_name: [核心机制名称] # 例如: 精神回响, 空间重叠, 能量潮汐
+  mechanic_description: [核心机制效果描述] # 例如: 可感知过去残留影像, 区域会随机变化连接, 特定时间能量爆发
+  mechanic_trigger: [核心机制触发条件] # 例如: 进入特定区域, 使用特定物品, 特定时间点
+  mechanic_rules: [核心机制的规则与限制] # 例如: 效果持续时间, 对使用者的消耗/影响, 应对方法
+  interactive_elements: [可互动的环境元素列表] # 例如: 可操作的控制台, 隐藏的开关, 需要特定方式打开的门, 可触发陷阱的地板
+  recurring_phenomenon: [周期性或随机发生的现象] # 例如: 定时出现的幽灵, 随机断电, 空间扭曲事件
+
+uid: 005
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 主要人物/存在体
+  Comma_separated_list: 场所人物,居住者,敌人,盟友,势力,[场所名称]人物,[关键人物],[常见敌人],[中立存在]
+content: |
+  # [场所名称]内的主要人物或存在体 (使用PList格式)
+  [关键人物/存在A(例如: 守护者/领袖): 角色定位/阵营, 能力/特征, 行为模式, 可能的互动方式, [人物A别名]]
+  [常见敌人/威胁B(例如: 巡逻机器人/变异生物): 威胁类型/特征, 攻击方式/弱点, 分布区域, [敌人B别名]]
+  [中立/特殊存在C(例如: 信息提供者/环境生物): 角色定位/特征, 行为模式, 互动条件, 可能提供的帮助/信息, [存在C别名]]
+  [小型群体/派系D(例如: 幸存者小队/研究员残余): 群体目标/构成, 对主角态度, 主要活动区域, [群体D别名]]
+
+uid: 006
+trigger:
+  type: Constant
+  position: Before Character Definition
+  Title: 场所模板 - 重要物品与资源
+  Comma_separated_list: 场所物品,关键道具,资源点,特殊物品,[场所名称]物品,[关键道具],[稀有资源],[环境特产]
+content: |
+  # [场所名称]内的重要物品与资源点 (使用PList格式)
+  [关键道具A(例如: 门禁卡/能量核心): 物品功能/用途, 获取方式/地点, 使用限制, [道具A别名]]
+  [稀有资源B(例如: 特殊矿石/古代文献): 资源描述/价值, 分布地点/采集难度, 用途, [资源B别名]]
+  [环境特产C(例如: 发光苔藓/特殊植物): 物品特性/效果, 获取地点, 可能的用途(照明/治疗/材料), [特产C别名]]
+  [消耗品/补给D(例如: 医疗包/弹药): 物品效果/类型, 常见发现地点, [补给D别名]]

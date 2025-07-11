@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>世界书生成器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div id="wbg-popup-overlay">
+        <div id="wbg-popup" class="popup-content">
+            <div class="wbg-header">
+                <h2>世界书生成器</h2>
+                <span id="wbg-popup-close-button" class="close-button">&times;</span>
+            </div>
+
+            <!-- 欢迎页面 -->
+            <div id="wbg-landing-page">
+                <h3>欢迎回来！</h3>
+                <p>请选择您的操作：</p>
+                <div class="wbg-button-group vertical">
+                    <button id="quickContinueButton" class="action-button primary" style="display: none; margin-bottom: 15px;">
+                        <i class="fa-solid fa-bolt"></i> 快速继续: <span></span>
+                    </button>
+                    <button id="startNewButton" class="action-button primary">创建新世界</button>
+                    <div class="continue-section">
+                        <select id="existingBooksDropdown">
+                            <option value="">选择一个已有的世界书...</option>
+                        </select>
+                        <button id="continueButton" class="action-button">继续上次的工作</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主生成器页面 (默认隐藏) -->
+            <div id="wbg-generator-page" style="display: none;">
+                <div class="input-group">
+                    <label for="bookName">世界书名称:</label>
+                    <input type="text" id="bookName" placeholder="为你的世界命名">
+                </div>
+
+                <!-- 阶段选择器 -->
+                <div id="wbg-stage-selector" class="wbg-button-group centered">
+                    <button class="stage-button" data-stage="1">阶段一: 基石</button>
+                    <button class="stage-button" data-stage="2">阶段二: 剧情</button>
+                    <button class="stage-button" data-stage="3">阶段三: 细节</button>
+                    <button class="stage-button" data-stage="4">阶段四: 机制</button>
+                </div>
+
+        <!-- 阶段一：世界基石 -->
+        <div id="stage-1" class="wbg-stage active">
+            <h3>阶段一：世界基石生成</h3>
+            <div class="randomize-container">
+                <button id="randomizeAllButton" class="action-button secondary small-button">🎲 随机选择全部</button>
+            </div>
+            <details id="advanced-options-container">
+                <summary class="summary-as-button">高级设定选项 (点击展开/折叠)</summary>
+                <div id="advanced-options-content" class="advanced-options-grid">
+                    <!-- 高级选项的下拉菜单将由JS动态生成并插入此处 -->
+                </div>
+            </details>
+            <div class="input-group">
+                <label for="coreTheme">核心主题 (或自由输入):</label>
+                <textarea id="coreTheme" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了高级设定，这里可以作为补充说明。"></textarea>
+            </div>
+            <div class="input-group">
+                <label>AI生成内容 (审核):</label>
+                <textarea id="aiResponseTextArea" class="wbg-textarea" rows="8" readonly placeholder="AI生成的内容将显示在这里以供审核..."></textarea>
+            </div>
+            <div class="wbg-button-group">
+                <button id="generateFoundationButton" class="action-button primary">生成/补充内容</button>
+                <button id="uploadFoundationButton" class="action-button" disabled>上传至世界书</button>
+            </div>
+        </div>
+
+        <!-- 阶段二：剧情构思 -->
+        <div id="stage-2" class="wbg-stage">
+            <h3>阶段二：剧情构思与大纲</h3>
+            <div class="randomize-container">
+                <button id="randomizePlotButton" class="action-button secondary small-button">🎲 随机选择全部</button>
+            </div>
+            <details id="plot-options-container">
+                <summary class="summary-as-button">剧情设定选项 (点击展开/折叠)</summary>
+                <div id="plot-options-content" class="advanced-options-grid">
+                    <!-- 剧情选项的下拉菜单将由JS动态生成并插入此处 -->
+                </div>
+            </details>
+            <div class="input-group">
+                <label for="plotElements">核心剧情元素 (或自由输入):</label>
+                <textarea id="plotElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了剧情设定，这里可以作为补充说明。"></textarea>
+            </div>
+            <div class="input-group">
+                <label>AI生成内容 (审核):</label>
+                <textarea id="aiResponseTextArea-stage2" class="wbg-textarea" rows="8" readonly placeholder="AI生成的剧情大纲将显示在这里..."></textarea>
+            </div>
+            <div class="wbg-button-group">
+                <button id="generateOutlineButton" class="action-button primary">生成/补充剧情</button>
+                <button id="uploadOutlineButton" class="action-button" disabled>上传至世界书</button>
+            </div>
+        </div>
+
+                <!-- 阶段三：细节填充 -->
+                <div id="stage-3" class="wbg-stage">
+                    <h3>阶段三：细节填充</h3>
+                    <div class="randomize-container">
+                        <button id="randomizeDetailButton" class="action-button secondary small-button">🎲 随机选择全部</button>
+                    </div>
+                    <details id="detail-options-container">
+                        <summary class="summary-as-button">细节深化选项 (点击展开/折叠)</summary>
+                        <div id="detail-options-content" class="advanced-options-grid">
+                            <!-- 细节选项的下拉菜单将由JS动态生成并插入此处 -->
+                        </div>
+                    </details>
+                    <div class="input-group">
+                        <label for="detailElements">核心主题 (或自由输入):</label>
+                        <textarea id="detailElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了细节深化选项，这里可以作为补充说明。"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>AI生成内容 (审核):</label>
+                        <textarea id="aiResponseTextArea-stage3" class="wbg-textarea" rows="8" readonly placeholder="AI生成的细节内容将显示在这里..."></textarea>
+                    </div>
+                    <div class="wbg-button-group">
+                        <button id="generateDetailButton" class="action-button primary">生成/补充细节</button>
+                        <button id="uploadDetailButton" class="action-button" disabled>上传至世界书</button>
+                    </div>
+                </div>
+
+                <!-- 阶段四：游戏机制 -->
+                <div id="stage-4" class="wbg-stage">
+                    <h3>阶段四：游戏机制设计</h3>
+                    <div class="randomize-container">
+                        <button id="randomizeMechanicsButton" class="action-button secondary small-button">🎲 随机选择全部</button>
+                    </div>
+                    <details id="mechanics-options-container">
+                        <summary class="summary-as-button">游戏机制选项 (点击展开/折叠)</summary>
+                        <div id="mechanics-options-content" class="advanced-options-grid">
+                            <!-- 游戏机制选项的下拉菜单将由JS动态生成并插入此处 -->
+                        </div>
+                    </details>
+                    <div class="input-group">
+                        <label for="mechanicsElements">核心主题 (或自由输入):</label>
+                        <textarea id="mechanicsElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了游戏机制选项，这里可以作为补充说明。"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>AI生成内容 (审核):</label>
+                        <textarea id="aiResponseTextArea-stage4" class="wbg-textarea" rows="8" readonly placeholder="AI设计的游戏机制将显示在这里..."></textarea>
+                    </div>
+                    <div class="wbg-button-group">
+                        <button id="generateMechanicsButton" class="action-button primary">设计/补充机制</button>
+                        <button id="uploadMechanicsButton" class="action-button" disabled>上传至世界书</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wbg-footer">
+                <p>SillyTavern 世界书生成器</p>
+            </div>
+        </div>
+    </div>
+    <!-- 脚本将在SillyTavern环境中由index.js动态加载 -->
+</body>
+</html>
