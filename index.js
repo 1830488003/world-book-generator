@@ -589,6 +589,38 @@ jQuery(async () => {
         return sanitized;
     }
 
+    /**
+     * 带有重试机制的任务执行器
+     * @param {Function} taskFunction - 要执行的异步任务函数
+     * @param {number} maxRetries - 最大重试次数
+     * @param {number} retryDelay - 重试前的延迟（毫秒）
+     * @returns {Promise<any>} - 任务函数的返回值
+     */
+    async function executeStageTaskWithRetry(
+        taskFunction,
+        maxRetries = 3,
+        retryDelay = 2000,
+    ) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await taskFunction(); // 尝试执行任务
+            } catch (error) {
+                if (attempt < maxRetries) {
+                    // 记录重试信息
+                    updateAutoGenStatus(
+                        `错误: ${error.message}. 正在进行第 ${attempt}/${maxRetries} 次重试...`,
+                    );
+                    await delay(retryDelay); // 等待后重试
+                } else {
+                    // 如果所有重试都失败，则抛出最终错误
+                    throw new Error(
+                        `在 ${maxRetries} 次尝试后仍然失败: ${error.message}`,
+                    );
+                }
+            }
+        }
+    }
+
     function setActiveStage(stageNumber) {
         projectState.currentStage = stageNumber;
         // 更新阶段内容显示
@@ -1386,44 +1418,55 @@ jQuery(async () => {
             localStorage.setItem('wbg_lastBookName', bookName);
             updateAutoGenStatus(`已创建世界书 '${bookName}'`);
 
-            // 1. 任务拆解
+            // 1. 任务拆解 (带重试)
             updateAutoGenStatus('正在请求“盘古”AI拆解核心任务...');
-            const decomposerTemplate = await $.get(
-                `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
-            );
-            // 新增：将各阶段执行次数注入提示词
-            const decomposerPrompt = decomposerTemplate
-                .replace(
-                    '{{core_theme}}',
-                    autoGenState.coreTheme,
-                )
-                .replace('{{stage1_count}}', autoGenState.stageCounts.stage1)
-                .replace('{{stage2_count}}', autoGenState.stageCounts.stage2)
-                .replace('{{stage3_count}}', autoGenState.stageCounts.stage3)
-                .replace('{{stage4_count}}', autoGenState.stageCounts.stage4);
-
-
-            const decomposerPayload = {
-                ordered_prompts: [{ role: 'user', content: decomposerPrompt }],
-                max_new_tokens: 2048,
-            };
-            const decomposerResponse =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(decomposerPayload)
-                    : await tavernHelperApi.generateRaw(decomposerPayload);
-
-            const cleanedDecomposerJson =
-                extractAndCleanJson(decomposerResponse);
-            const instructions = JSON.parse(cleanedDecomposerJson);
-            // 验证返回的是否是包含指令数组的有效结构
-            if (
-                !instructions.stage1_instruction ||
-                !Array.isArray(instructions.stage1_instruction)
-            ) {
-                throw new Error(
-                    '任务拆解失败，AI未返回有效的指令数组结构。请检查AI后端或提示词。',
+            const instructions = await executeStageTaskWithRetry(async () => {
+                const decomposerTemplate = await $.get(
+                    `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
                 );
-            }
+                const decomposerPrompt = decomposerTemplate
+                    .replace('{{core_theme}}', autoGenState.coreTheme)
+                    .replace(
+                        '{{stage1_count}}',
+                        autoGenState.stageCounts.stage1,
+                    )
+                    .replace(
+                        '{{stage2_count}}',
+                        autoGenState.stageCounts.stage2,
+                    )
+                    .replace(
+                        '{{stage3_count}}',
+                        autoGenState.stageCounts.stage3,
+                    )
+                    .replace(
+                        '{{stage4_count}}',
+                        autoGenState.stageCounts.stage4,
+                    );
+
+                const decomposerPayload = {
+                    ordered_prompts: [
+                        { role: 'user', content: decomposerPrompt },
+                    ],
+                    max_new_tokens: 2048,
+                };
+                const decomposerResponse =
+                    settings.aiSource === 'custom'
+                        ? await callCustomApi(decomposerPayload)
+                        : await tavernHelperApi.generateRaw(decomposerPayload);
+
+                const cleanedDecomposerJson =
+                    extractAndCleanJson(decomposerResponse);
+                const parsedInstructions = JSON.parse(cleanedDecomposerJson);
+                if (
+                    !parsedInstructions.stage1_instruction ||
+                    !Array.isArray(parsedInstructions.stage1_instruction)
+                ) {
+                    throw new Error(
+                        '任务拆解失败，AI未返回有效的指令数组结构。',
+                    );
+                }
+                return parsedInstructions;
+            });
             updateAutoGenStatus('任务拆解成功！');
 
             // 加载通用提示词
@@ -1433,177 +1476,126 @@ jQuery(async () => {
             ]);
             const basePrompt = `${unrestrictPrompt}\n\n${writingGuide}\n\n`;
 
-            // 2. 循环执行阶段一
-            const stage1Instructions = instructions.stage1_instruction || [];
-            for (let i = 0; i < stage1Instructions.length; i++) {
-                const instruction = stage1Instructions[i];
-                updateAutoGenStatus(
-                    `开始执行第一阶段 (${i + 1}/${
-                        stage1Instructions.length
-                    }): 世界基石...`,
-                );
-                const stage1Template = await $.get(
-                    `${extensionFolderPath}/generator-prompt.txt`,
-                );
-                const stage1FinalPrompt = (basePrompt + stage1Template)
-                    .replace(/{{bookName}}/g, bookName)
-                    .replace(/{{advancedOptions}}/g, '无')
-                    .replace(/{{coreTheme}}/g, instruction);
+            // 定义一个通用的阶段执行函数
+            const executeStage = async (
+                stageName,
+                stageNum,
+                instructions,
+                promptFile,
+                promptReplacer,
+            ) => {
+                for (let i = 0; i < instructions.length; i++) {
+                    const instruction = instructions[i];
+                    updateAutoGenStatus(
+                        `开始执行第${stageName}阶段 (${i + 1}/${
+                            instructions.length
+                        })...`,
+                    );
 
-                const stage1Payload = {
-                    ordered_prompts: [
-                        { role: 'user', content: stage1FinalPrompt },
-                    ],
-                    max_new_tokens: 8192,
-                };
-                const stage1Response =
-                    settings.aiSource === 'custom'
-                        ? await callCustomApi(stage1Payload)
-                        : await tavernHelperApi.generateRaw(stage1Payload);
-                const stage1Entries = JSON.parse(
-                    extractAndCleanJson(stage1Response),
-                );
-                for (const entry of stage1Entries) {
-                    await createLorebookEntry(bookName, sanitizeEntry(entry));
+                    const task = async () => {
+                        const stageTemplate = await $.get(
+                            `${extensionFolderPath}/${promptFile}`,
+                        );
+                        const currentEntries = await getLorebookEntries(
+                            bookName,
+                        );
+                        const finalPrompt = promptReplacer(
+                            basePrompt + stageTemplate,
+                            instruction,
+                            currentEntries,
+                        );
+
+                        const payload = {
+                            ordered_prompts: [
+                                { role: 'user', content: finalPrompt },
+                            ],
+                            max_new_tokens: 8192,
+                        };
+                        const response =
+                            settings.aiSource === 'custom'
+                                ? await callCustomApi(payload)
+                                : await tavernHelperApi.generateRaw(payload);
+                        const entries = JSON.parse(
+                            extractAndCleanJson(response),
+                        );
+                        for (const entry of entries) {
+                            await createLorebookEntry(
+                                bookName,
+                                sanitizeEntry(entry),
+                            );
+                        }
+                        return entries.length;
+                    };
+
+                    const entriesCount = await executeStageTaskWithRetry(task);
+                    updateAutoGenStatus(
+                        `第${stageName}阶段 (${i + 1}/${
+                            instructions.length
+                        }) 完成，生成了 ${entriesCount} 个条目`,
+                    );
                 }
-                updateAutoGenStatus(
-                    `第一阶段 (${i + 1}/${
-                        stage1Instructions.length
-                    }) 完成，生成了 ${stage1Entries.length} 个条目`,
-                );
-            }
+            };
 
-            // 3. 循环执行阶段二
-            const stage2Instructions = instructions.stage2_instruction || [];
-            for (let i = 0; i < stage2Instructions.length; i++) {
-                const instruction = stage2Instructions[i];
-                updateAutoGenStatus(
-                    `开始执行第二阶段 (${i + 1}/${
-                        stage2Instructions.length
-                    }): 剧情构思...`,
-                );
-                const stage2Template = await $.get(
-                    `${extensionFolderPath}/story-prompt.txt`,
-                );
-                const currentEntriesS2 = await getLorebookEntries(bookName);
-                const stage2FinalPrompt = (basePrompt + stage2Template)
-                    .replace(
-                        /{{world_book_entries}}/g,
-                        JSON.stringify(currentEntriesS2, null, 2),
-                    )
-                    .replace(/{{plot_elements}}/g, instruction)
-                    .replace(/{{plotOptions}}/g, '无');
+            // 2. 执行阶段一
+            await executeStage(
+                '一 (世界基石)',
+                1,
+                instructions.stage1_instruction || [],
+                'generator-prompt.txt',
+                (template, instruction) =>
+                    template
+                        .replace(/{{bookName}}/g, bookName)
+                        .replace(/{{advancedOptions}}/g, '无')
+                        .replace(/{{coreTheme}}/g, instruction),
+            );
 
-                const stage2Payload = {
-                    ordered_prompts: [
-                        { role: 'user', content: stage2FinalPrompt },
-                    ],
-                    max_new_tokens: 8192,
-                };
-                const stage2Response =
-                    settings.aiSource === 'custom'
-                        ? await callCustomApi(stage2Payload)
-                        : await tavernHelperApi.generateRaw(stage2Payload);
-                const stage2Entries = JSON.parse(
-                    extractAndCleanJson(stage2Response),
-                );
-                for (const entry of stage2Entries) {
-                    await createLorebookEntry(bookName, sanitizeEntry(entry));
-                }
-                updateAutoGenStatus(
-                    `第二阶段 (${i + 1}/${
-                        stage2Instructions.length
-                    }) 完成，生成了 ${stage2Entries.length} 个条目`,
-                );
-            }
+            // 3. 执行阶段二
+            await executeStage(
+                '二 (剧情构思)',
+                2,
+                instructions.stage2_instruction || [],
+                'story-prompt.txt',
+                (template, instruction, entries) =>
+                    template
+                        .replace(
+                            /{{world_book_entries}}/g,
+                            JSON.stringify(entries, null, 2),
+                        )
+                        .replace(/{{plot_elements}}/g, instruction)
+                        .replace(/{{plotOptions}}/g, '无'),
+            );
 
-            // 4. 循环执行阶段三
-            const stage3Instructions = instructions.stage3_instruction || [];
-            for (let i = 0; i < stage3Instructions.length; i++) {
-                const instruction = stage3Instructions[i];
-                updateAutoGenStatus(
-                    `开始执行第三阶段 (${i + 1}/${
-                        stage3Instructions.length
-                    }): 细节填充...`,
-                );
-                const stage3Template = await $.get(
-                    `${extensionFolderPath}/detail-prompt.txt`,
-                );
-                const currentEntriesS3 = await getLorebookEntries(bookName);
-                const stage3FinalPrompt = (basePrompt + stage3Template)
-                    .replace(
-                        /{{world_book_entries}}/g,
-                        JSON.stringify(currentEntriesS3, null, 2),
-                    )
-                    .replace(/{{detail_elements}}/g, instruction)
-                    .replace(/{{detailOptions}}/g, '无');
+            // 4. 执行阶段三
+            await executeStage(
+                '三 (细节填充)',
+                3,
+                instructions.stage3_instruction || [],
+                'detail-prompt.txt',
+                (template, instruction, entries) =>
+                    template
+                        .replace(
+                            /{{world_book_entries}}/g,
+                            JSON.stringify(entries, null, 2),
+                        )
+                        .replace(/{{detail_elements}}/g, instruction)
+                        .replace(/{{detailOptions}}/g, '无'),
+            );
 
-                const stage3Payload = {
-                    ordered_prompts: [
-                        { role: 'user', content: stage3FinalPrompt },
-                    ],
-                    max_new_tokens: 8192,
-                };
-                const stage3Response =
-                    settings.aiSource === 'custom'
-                        ? await callCustomApi(stage3Payload)
-                        : await tavernHelperApi.generateRaw(stage3Payload);
-                const stage3Entries = JSON.parse(
-                    extractAndCleanJson(stage3Response),
-                );
-                for (const entry of stage3Entries) {
-                    await createLorebookEntry(bookName, sanitizeEntry(entry));
-                }
-                updateAutoGenStatus(
-                    `第三阶段 (${i + 1}/${
-                        stage3Instructions.length
-                    }) 完成，生成了 ${stage3Entries.length} 个条目`,
-                );
-            }
-
-            // 5. 循环执行阶段四
-            const stage4Instructions = instructions.stage4_instruction || [];
-            for (let i = 0; i < stage4Instructions.length; i++) {
-                const instruction = stage4Instructions[i];
-                updateAutoGenStatus(
-                    `开始执行第四阶段 (${i + 1}/${
-                        stage4Instructions.length
-                    }): 机制设计...`,
-                );
-                const stage4Template = await $.get(
-                    `${extensionFolderPath}/mechanics-prompt.txt`,
-                );
-                const currentEntriesS4 = await getLorebookEntries(bookName);
-                const stage4FinalPrompt = (basePrompt + stage4Template)
-                    .replace(
-                        /{{world_book_entries}}/g,
-                        JSON.stringify(currentEntriesS4, null, 2),
-                    )
-                    .replace(/{{mechanics_elements}}/g, instruction)
-                    .replace(/{{mechanicsOptions}}/g, '无');
-
-                const stage4Payload = {
-                    ordered_prompts: [
-                        { role: 'user', content: stage4FinalPrompt },
-                    ],
-                    max_new_tokens: 8192,
-                };
-                const stage4Response =
-                    settings.aiSource === 'custom'
-                        ? await callCustomApi(stage4Payload)
-                        : await tavernHelperApi.generateRaw(stage4Payload);
-                const stage4Entries = JSON.parse(
-                    extractAndCleanJson(stage4Response),
-                );
-                for (const entry of stage4Entries) {
-                    await createLorebookEntry(bookName, sanitizeEntry(entry));
-                }
-                updateAutoGenStatus(
-                    `第四阶段 (${i + 1}/${
-                        stage4Instructions.length
-                    }) 完成，生成了 ${stage4Entries.length} 个条目`,
-                );
-            }
+            // 5. 执行阶段四
+            await executeStage(
+                '四 (机制设计)',
+                4,
+                instructions.stage4_instruction || [],
+                'mechanics-prompt.txt',
+                (template, instruction, entries) =>
+                    template
+                        .replace(
+                            /{{world_book_entries}}/g,
+                            JSON.stringify(entries, null, 2),
+                        )
+                        .replace(/{{mechanics_elements}}/g, instruction)
+                        .replace(/{{mechanicsOptions}}/g, '无'),
+            );
 
             // 最终成功
             updateAutoGenStatus('恭喜！全自动生成流程已成功完成！');
