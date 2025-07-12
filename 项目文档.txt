@@ -2,6 +2,40 @@
 
 ---
 
+## 版本 v9.1.0 - 设置界面UI统一
+
+### 2025-07-12 15:21
+- **任务**: **根据用户的精确反馈，统一设置界面的UI风格，使其与 `my-world-book-momo` 扩展的布局和观感保持一致。**
+- **背景**: 用户指出，v9.0.1版本的设置页面中，“更新管理”部分作为一个独立的UI块，与整体风格格格不入，并且占用了固定的显示空间，体验不佳。
+- **解决方案 (HTML结构与CSS样式重构)**:
+    1.  **重构HTML结构 (`settings.html`)**:
+        -   将整个“更新管理”部分，包括版本信息、更新按钮和自动更新开关，全部移入一个标准的 `inline-drawer` 可折叠容器中。
+        -   这使得“更新管理”现在拥有了与“关于插件”部分完全一致的、可展开/收起的行为，解决了占用固定空间的问题。
+    2.  **重构CSS样式 (`style.css`)**:
+        -   彻底删除了之前为独立UI块编写的、不协调的样式规则。
+        -   重写了CSS，新的样式规则精确地作用于 `inline-drawer` 内部的元素，使用Flexbox对齐了版本号、更新按钮和切换开关，确保其布局与用户提供的最终效果图完全吻合。
+- **状态**: **设置页面的UI已完全统一。现在它拥有了更专业、更集成、更节省空间的布局，完全符合用户的视觉和交互要求。**
+- **下一步**: **更新README.md，并提醒用户手动上传至Github。**
+
+---
+
+## 版本 v9.0.1 - 更新机制热修复
+
+### 2025-07-12 15:01
+- **任务**: **修复因错误的Github API调用而导致的“检查更新失败”的严重BUG。**
+- **背景**: 用户报告插件在检查更新时，控制台会报出 `Error: Github API 请求失败: 404` 的错误。经排查，这是因为 `checkForUpdates` 函数试图访问 `.../releases/latest` API端点，但该项目的Github仓库并未创建任何正式的“Release”。
+- **解决方案 (API调用逻辑修正)**:
+    1.  **修正更新检查逻辑 (`index.js`)**:
+        -   修改了 `checkForUpdates` 函数的核心逻辑。
+        -   不再调用 `/releases/latest` API，而是直接通过 `fetch` 访问Github仓库中 `main` 分支下的 `manifest.json` 源文件。
+        -   通过解析这个 `manifest.json` 文件的内容来获取最新的版本号。这种方法更稳定、更可靠，且不再依赖于用户是否创建了正式的Github Release。
+    2.  **更新版本号 (`manifest.json`)**:
+        -   将 `manifest.json` 文件中的版本号提升至 `9.0.1`，以标记本次修复。
+- **状态**: **更新检查失败的BUG已彻底修复。插件现在能够通过直接读取仓库中的清单文件来正确获取最新版本信息。**
+- **下一步**: **提醒用户手动上传至Github。**
+
+---
+
 ## 版本 v9.0.0 - 更新机制重构与用户控制
 
 ### 2025-07-12 14:41
@@ -784,30 +818,3 @@
         -   `README.md`: 编写了项目的初步介绍和安装指南。
 - **状态**: 框架搭建完成。
 - **下一步**: 实现 v0.2.0 设计方案中规划的四阶段工作流。
-<environment_details>
-# VSCode Visible Files
-world-book-generator/style.css
-
-# VSCode Open Tabs
-JS-Slash-Runner/src/util/check_update.ts
-world-book-generator/updater.js
-world-book-generator/项目文档.txt
-world-book-generator/index.js
-world-book-generator/settings.html
-world-book-generator/popup.html
-world-book-generator/style.css
-酒馆扩展编写教程.txt
-world-book-generator/manifest.json
-
-# Actively Running Terminals
-## Original command: `npx prettier --write "world-book-generator/index.js"`
-
-# Current Time
-2025/7/12 下午2:41:30 (Asia/Shanghai, UTC+8:00)
-
-# Context Window Usage
-51,397 / 128K tokens used (40%)
-
-# Current Mode
-ACT MODE
-</environment_details>

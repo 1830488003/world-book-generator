@@ -36,18 +36,7 @@ jQuery(async () => {
     }
 
     async init() {
-      // 仅在设置页面执行
-      if (!document.getElementById("wbg-updater-section")) {
-        // 如果不在设置页面，但开启了自动更新，则静默检查
-        const autoUpdateEnabled =
-          localStorage.getItem(this.storageKey) !== "false";
-        if (autoUpdateEnabled) {
-          await this.loadManifest();
-          this.checkForUpdates(false);
-        }
-        return;
-      }
-
+      // 总是尝试获取UI元素，无论在哪个页面
       this.elements.versionDisplay = document.getElementById(
         "wbg-current-version",
       );
@@ -58,21 +47,23 @@ jQuery(async () => {
         "wbg-auto-update-toggle",
       );
 
-      if (
-        !this.elements.versionDisplay ||
-        !this.elements.checkButton ||
-        !this.elements.autoUpdateToggle
-      ) {
-        console.error("WBGUpdater: 未能找到所有更新相关的UI元素。");
-        return;
-      }
-
+      // 加载本地版本号并显示
       await this.loadManifest();
-      this.setupEventListeners();
-      this.loadSettings();
 
-      if (this.elements.autoUpdateToggle.checked) {
-        this.checkForUpdates(false); // 页面加载时静默检查
+      // 仅在设置页面绑定事件和加载设置
+      if (this.elements.checkButton && this.elements.autoUpdateToggle) {
+        this.setupEventListeners();
+        this.loadSettings();
+        if (this.elements.autoUpdateToggle.checked) {
+          this.checkForUpdates(false); // 页面加载时静默检查
+        }
+      } else {
+        // 如果不在设置页面，但开启了自动更新，则静默检查
+        const autoUpdateEnabled =
+          localStorage.getItem(this.storageKey) !== "false";
+        if (autoUpdateEnabled) {
+          this.checkForUpdates(false);
+        }
       }
     }
 
@@ -83,13 +74,16 @@ jQuery(async () => {
         );
         const manifest = await response.json();
         this.currentVersion = manifest.version;
-        if (this.elements.versionDisplay) {
-          this.elements.versionDisplay.textContent = `v${this.currentVersion}`;
+        // 修正：直接使用获取到的元素，而不是依赖 this.elements
+        const versionDisplay = document.getElementById("wbg-current-version");
+        if (versionDisplay) {
+          versionDisplay.textContent = `v${this.currentVersion}`;
         }
       } catch (error) {
         console.error("WBGUpdater: 加载 manifest.json 失败", error);
-        if (this.elements.versionDisplay) {
-          this.elements.versionDisplay.textContent = "错误";
+        const versionDisplay = document.getElementById("wbg-current-version");
+        if (versionDisplay) {
+          versionDisplay.textContent = "错误";
         }
       }
     }
