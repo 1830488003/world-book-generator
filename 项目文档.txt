@@ -2,6 +2,73 @@
 
 ---
 
+## 版本 v14.0.0 - 引入自动化生成“执行次数”配置
+
+### 2025-07-12 21:24
+- **任务**: **为“全自动生成”模式增加一个配置菜单，允许用户自定义每个创作阶段的执行次数，以生成更丰富、更多样化的世界书内容。**
+- **背景**: 用户反馈，默认的自动化流程每个阶段只执行一次，生成的条目数量有限，不够丰富。希望能通过多次执行同一阶段来增加内容的深度和广度。
+- **解决方案 (核心逻辑与提示词重构)**:
+    1.  **新增配置UI (`popup.html`)**:
+        -   在自动化生成页面，于“核心创作要求”上方，新增了一个名为“各阶段执行次数配置”的UI区域。
+        -   该区域包含四个独立的数字输入框，分别对应“阶段一（基石）”到“阶段四（机制）”的执行次数，允许用户自由配置（1-10次）。
+    2.  **重构“盘古”AI提示词 (`auto-generator-decomposer-prompt.txt`)**:
+        -   向提示词中加入了新的占位符，用于接收用户配置的各阶段执行次数。
+        -   彻底重构了AI的核心任务指令：现在要求AI返回的JSON中，每个阶段的`instruction`字段必须是一个【字符串数组】。
+        -   数组的长度必须严格等于用户为该阶段配置的执行次数，并加入了【多样性铁律】，强制AI为同一阶段生成的多个指令必须有显著差异。
+    3.  **升级自动化核心逻辑 (`index.js`)**:
+        -   修改了 `runAutomatedGeneration` 函数，使其在启动任务时，会从新的UI输入框中读取用户配置的执行次数，并将其存入全局状态 `autoGenState`。
+        -   彻底重构了 `doAutomatedGeneration` 函数。原有的线性执行流程被替换为四个独立的、可以遍历指令数组的【for循环】。
+        -   现在，该函数会依次为每个阶段循环执行AI调用和文件上传，直到完成用户配置的所有次数，并在UI上实时更新带有执行进度的状态信息（如“第一阶段 (2/3) 完成”）。
+- **状态**: **自动化生成流程的灵活性和内容丰富度已得到革命性提升。用户现在可以完全控制每个阶段的创作深度。版本号正式进入 14.0.0。**
+- **下一步**: **提醒用户进行全面测试，并手动上传至Github。**
+
+---
+
+## 版本 v13.0.0 - 集成自定义API功能
+
+### 2025-07-12 21:14
+- **任务**: **为插件增加连接到自定义AI后端的功能，允许用户绕过SillyTavern内置AI，使用自己的API服务。**
+- **背景**: 为了提供更高的灵活性和可扩展性，用户希望能像 `real-time-status-bar` 插件一样，配置并使用自己的、符合OpenAI规范的API端点。
+- **解决方案 (代码移植与适配)**:
+    1.  **借鉴成熟方案**: 深入研究了 `real-time-status-bar` 插件中关于自定义API的实现，并将其作为本次功能开发的“黄金标准”。
+    2.  **扩展设置UI (`settings.html`)**:
+        -   在设置页面，新增了一个“AI 源”下拉菜单，允许用户在“酒馆AI”和“自定义AI”之间切换。
+        -   添加了一个默认隐藏的配置区域，其中包含三个核心输入字段：“API 基础URL”、“API 密钥 (可选)”和“模型名称”。
+        -   配备了“加载模型列表”和“保存自定义API”的功能按钮，提供了完整的用户交互界面。
+    3.  **移植核心JS逻辑 (`index.js`)**:
+        -   **添加设置管理**: 创建了 `settings` 和 `defaultSettings` 对象，并实现了 `loadSettings` 和 `saveSettings` 函数，用于通过SillyTavern的API持久化存储用户的API配置。
+        -   **实现API交互**: 移植并适配了 `fetchApiModels` (用于从API获取可用模型列表) 和 `callCustomApi` (用于向自定义API发送生成请求) 两个核心函数。
+        -   **重构AI调用点**: 对插件中所有调用AI的地方（包括手动四阶段生成和全自动生成流程中的所有 `generateRaw` 调用）进行了重构。现在，代码会首先检查 `settings.aiSource` 的值，然后动态地决定是使用 `tavernHelperApi.generateRaw` 还是新实现的 `callCustomApi`。
+    4.  **完成事件绑定**: 在 `initializeExtension` 函数中，为所有新的UI控件绑定了相应的事件监听器，激活了整个功能。
+- **状态**: **自定义API功能已完全集成。插件现在具备了双AI引擎驱动能力，极大地增强了其通用性和专业性。版本号正式进入 13.0.0。**
+- **下一步**: **提醒用户进行全面测试，并手动上传至Github。**
+
+---
+
+## 版本 v12.0.0 - 引入后台任务与状态恢复
+
+### 2025-07-12 20:54
+- **任务**: **重构“全自动生成”功能，使其成为一个真正的后台任务，允许用户关闭弹窗后继续运行，并能在重新打开时恢复并查看实时进度。**
+- **背景**: 用户反馈，在v11.0.0版本中，自动化生成过程会锁定UI，如果关闭弹窗则任务中断。这不符合一个耗时较长的后台任务应有的体验。
+- **解决方案 (架构重构：状态与UI分离)**:
+    1.  **创建全局状态管理器 (`autoGenState`)**:
+        -   在 `index.js` 中，创建了一个新的、独立的全局对象 `autoGenState`。
+        -   该对象负责存储自动化任务的所有核心信息，包括 `isRunning` (是否在运行), `isFinished` (是否已完成), `progress` (一个包含所有进度消息的数组), `bookName`, `coreTheme` 和 `error` 状态。这个对象在弹窗关闭后依然存在于内存中。
+    2.  **解耦任务执行与UI**:
+        -   将原有的 `runAutomatedGeneration` 函数拆分为两个：
+            -   **`runAutomatedGeneration` (启动器)**: 现在的职责是验证用户输入，初始化 `autoGenState`，更新UI进入“运行中”模式，然后**异步地、非阻塞地**调用真正的后台任务函数。
+            -   **`doAutomatedGeneration` (执行器)**: 这是真正执行所有AI调用和文件上传的后台函数。它不再直接操作DOM，而是通过调用 `updateAutoGenStatus` 来更新全局状态。
+    3.  **实现状态驱动的UI渲染**:
+        -   创建了 `renderAutoGenProgress` 函数。此函数的核心职责是**根据当前的 `autoGenState` 从头开始完整地渲染整个进度列表**。
+        -   `updateAutoGenStatus` 函数现在只负责向 `autoGenState.progress` 数组中添加新消息，然后调用 `renderAutoGenProgress` 来刷新UI。
+    4.  **重构弹窗打开逻辑**:
+        -   修改了悬浮按钮的 `click` 事件处理器。现在，每次点击时，它会首先检查 `autoGenState`。
+        -   如果发现有任务正在运行或已完成 (`isRunning` 或 `isFinished` 为 `true`)，它会**直接跳转到自动化进度页面**，并调用 `renderAutoGenProgress` 来恢复显示当前或最终的进度，而不是显示欢迎页。
+- **状态**: **自动化生成功能已完成架构上的彻底重构。它现在是一个健壮的、可恢复的后台任务系统，极大地提升了用户体验。版本号正式进入 12.0.0。**
+- **下一步**: **提醒用户进行全面测试，并手动上传至Github。**
+
+---
+
 ## 版本 v11.0.0 - 新增“全自动生成”模式
 
 ### 2025-07-12 20:42
@@ -915,3 +982,27 @@
         -   `README.md`: 编写了项目的初步介绍和安装指南。
 - **状态**: **框架搭建完成。**
 - **下一步**: 实现 v0.2.0 设计方案中规划的四阶段工作流。
+<environment_details>
+# VSCode Visible Files
+world-book-generator/popup.html
+
+# VSCode Open Tabs
+my-world-book-momo/index.js
+world-book-generator/manifest.json
+world-book-generator/mechanics-prompt.txt
+world-book-generator/settings.html
+world-book-generator/style.css
+world-book-generator/auto-generator-decomposer-prompt.txt
+world-book-generator/index.js
+world-book-generator/popup.html
+world-book-generator/项目文档.txt
+
+# Current Time
+2025/7/12 下午9:25:00 (Asia/Shanghai, UTC+8:00)
+
+# Context Window Usage
+100,319 / 128K tokens used (78%)
+
+# Current Mode
+ACT MODE
+</environment_details>

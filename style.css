@@ -191,6 +191,17 @@ body::-webkit-scrollbar {
     background-color: var(--primary-button-hover-bg);
 }
 
+.wbg-button-group.vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Use gap for consistent spacing */
+}
+
+.wbg-button-group.vertical .action-button {
+    width: 100%; /* Ensure all buttons in vertical group take full width */
+    margin-bottom: 0; /* Remove individual margin if using gap */
+}
+
 /* 灵感激发区域 */
 .inspiration-controls {
     display: flex;
@@ -503,4 +514,39 @@ input:focus + .wbg-slider {
 
 input:checked + .wbg-slider:before {
     transform: translateX(22px);
+}
+
+/* 自动化生成 - 次数配置样式 */
+.auto-gen-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-item label {
+    font-size: 0.9em;
+    color: #ccc;
+    font-weight: normal;
+}
+
+.wbg-small-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+    text-align: center;
 }

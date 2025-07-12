@@ -22,7 +22,7 @@
                         <i class="fa-solid fa-bolt"></i> 快速继续: <span></span>
                     </button>
                     <button id="startNewButton" class="action-button primary">创建新世界 (手动版)</button>
-                    <button id="startAutoButton" class="action-button secondary">创建世界书 (自动版)</button>
+                    <button id="startAutoButton" class="action-button primary">创建世界书 (自动版)</button>
                     <div class="continue-section">
                         <select id="existingBooksDropdown">
                             <option value="">选择一个已有的世界书...</option>
@@ -39,6 +39,27 @@
                 <div class="input-group">
                     <label for="autoBookName">新世界书名称:</label>
                     <input type="text" id="autoBookName" placeholder="为你的自动化世界命名">
+                </div>
+                <div class="input-group">
+                    <label>各阶段执行次数配置 (每阶段生成多少组内容):</label>
+                    <div id="wbg-auto-gen-counts" class="auto-gen-config-grid">
+                        <div class="config-item">
+                            <label for="stage1Count">阶段一 (基石):</label>
+                            <input type="number" id="stage1Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage2Count">阶段二 (剧情):</label>
+                            <input type="number" id="stage2Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage3Count">阶段三 (细节):</label>
+                            <input type="number" id="stage3Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage4Count">阶段四 (机制):</label>
+                            <input type="number" id="stage4Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="autoCoreTheme">核心创作要求:</label>
@@ -82,14 +103,35 @@
                     <!-- 高级选项的下拉菜单将由JS动态生成并插入此处 -->
                 </div>
             </details>
-            <div class="input-group">
-                <label for="coreTheme">核心主题 (或自由输入):</label>
-                <textarea id="coreTheme" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了高级设定，这里可以作为补充说明。"></textarea>
-            </div>
-            <div class="input-group">
-                <label>AI生成内容 (审核):</label>
-                <textarea id="aiResponseTextArea" class="wbg-textarea" rows="8" readonly placeholder="AI生成的内容将显示在这里以供审核..."></textarea>
-            </div>
+                <div class="input-group">
+                    <label for="autoBookName">新世界书名称:</label>
+                    <input type="text" id="autoBookName" placeholder="为你的自动化世界命名">
+                </div>
+                <div class="input-group">
+                    <label>各阶段执行次数配置 (每阶段生成多少组内容):</label>
+                    <div id="wbg-auto-gen-counts" class="auto-gen-config-grid">
+                        <div class="config-item">
+                            <label for="stage1Count">阶段一 (基石):</label>
+                            <input type="number" id="stage1Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage2Count">阶段二 (剧情):</label>
+                            <input type="number" id="stage2Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage3Count">阶段三 (细节):</label>
+                            <input type="number" id="stage3Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                        <div class="config-item">
+                            <label for="stage4Count">阶段四 (机制):</label>
+                            <input type="number" id="stage4Count" class="wbg-small-input" value="1" min="1" max="10">
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="autoCoreTheme">核心创作要求:</label>
+                    <textarea id="autoCoreTheme" class="wbg-textarea" rows="4" placeholder="例如：一个融合了赛博朋克与中国神话的都市，名为“九龙机电城”"></textarea>
+                </div>
             <div class="wbg-button-group">
                 <button id="generateFoundationButton" class="action-button primary">生成/补充内容</button>
                 <button id="uploadFoundationButton" class="action-button" disabled>上传至世界书</button>

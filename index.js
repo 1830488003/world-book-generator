@@ -263,6 +263,222 @@ jQuery(async () => {
     }
 
     // -----------------------------------------------------------------
+    // 新增：2.5 设置管理
+    // -----------------------------------------------------------------
+    const defaultSettings = {
+        aiSource: 'tavern', // 'tavern' 或 'custom'
+        apiUrl: '',
+        apiKey: '',
+        apiModel: '',
+    };
+    let settings = {};
+
+    /**
+     * 根据AI源选择，显示或隐藏自定义API设置区域
+     */
+    function toggleCustomApiSettings() {
+        if ($('#wbg-ai-source').val() === 'custom') {
+            $('#wbg-custom-api-settings').removeClass('hidden');
+        } else {
+            $('#wbg-custom-api-settings').addClass('hidden');
+        }
+    }
+
+    /**
+     * 从自定义API端点获取并填充模型列表
+     */
+    async function fetchApiModels() {
+        const apiUrl = $('#wbg-api-url').val().trim();
+        const apiKey = $('#wbg-api-key').val().trim();
+        const $modelSelect = $('#wbg-api-model');
+        const $fetchButton = $('#wbg-fetch-models');
+
+        if (!apiUrl) {
+            toastr.warning('请输入API基础URL。');
+            return;
+        }
+
+        $fetchButton.prop('disabled', true).addClass('fa-spin');
+        toastr.info('正在从API加载模型列表...');
+
+        try {
+            let modelsUrl = apiUrl;
+            if (!modelsUrl.endsWith('/')) {
+                modelsUrl += '/';
+            }
+            if (modelsUrl.includes('generativelanguage.googleapis.com')) {
+                if (!modelsUrl.endsWith('models')) modelsUrl += 'models';
+            } else if (modelsUrl.endsWith('/v1/')) {
+                modelsUrl += 'models';
+            } else if (!modelsUrl.endsWith('models')) {
+                modelsUrl += 'v1/models';
+            }
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiKey) {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            }
+
+            const response = await fetch(modelsUrl, { method: 'GET', headers });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `获取模型列表失败: ${response.status} - ${errorText}`,
+                );
+            }
+
+            const data = await response.json();
+            const models = data.data || data;
+
+            if (!Array.isArray(models) || models.length === 0) {
+                throw new Error('API返回的模型列表为空或格式不正确。');
+            }
+
+            const currentlySelected = settings.apiModel;
+            $modelSelect.empty();
+
+            models.forEach((model) => {
+                const modelId = model.id;
+                if (modelId) {
+                    const option = new Option(
+                        modelId,
+                        modelId,
+                        false,
+                        modelId === currentlySelected,
+                    );
+                    $modelSelect.append(option);
+                }
+            });
+
+            toastr.success(`成功加载了 ${models.length} 个模型。`);
+            saveSettings(false);
+        } catch (error) {
+            console.error(`[${extensionName}] 获取模型列表时出错:`, error);
+            toastr.error(`加载模型失败: ${error.message}`);
+            $modelSelect
+                .empty()
+                .append(new Option('加载失败，请检查URL/密钥并重试', ''));
+        } finally {
+            $fetchButton.prop('disabled', false).removeClass('fa-spin');
+        }
+    }
+    /**
+     * 调用自定义的OpenAI兼容API
+     * @param {object} payload - 发送给AI的完整请求体，例如 { ordered_prompts: [...] }
+     * @returns {Promise<string>} - AI返回的文本内容
+     */
+    async function callCustomApi(payload) {
+        const { apiUrl, apiKey, apiModel } = settings;
+
+        if (!apiUrl || !apiModel) {
+            throw new Error('自定义API的URL和模型名称不能为空。');
+        }
+
+        let finalUrl = apiUrl.trim();
+        if (!finalUrl.endsWith('/')) {
+            finalUrl += '/';
+        }
+
+        if (finalUrl.includes('generativelanguage.googleapis.com')) {
+            if (!finalUrl.endsWith('chat/completions')) {
+                finalUrl += 'chat/completions';
+            }
+        } else if (finalUrl.endsWith('/v1/')) {
+            finalUrl += 'chat/completions';
+        } else if (!finalUrl.includes('/chat/completions')) {
+            finalUrl += 'v1/chat/completions';
+        }
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const body = JSON.stringify({
+            model: apiModel,
+            messages: payload.ordered_prompts,
+            max_tokens: payload.max_new_tokens || 8192,
+            stream: false,
+        });
+
+        console.log(`[${extensionName}] 正在调用自定义API...`, {
+            url: finalUrl,
+            model: apiModel,
+        });
+        const response = await fetch(finalUrl, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(
+                `自定义API请求失败: ${response.status} ${response.statusText} - ${errorBody}`,
+            );
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || '';
+    }
+
+    /**
+     * 加载插件设置。
+     */
+    function loadSettings() {
+        if (!SillyTavern.getContext().extensionSettings[extensionName]) {
+            SillyTavern.getContext().extensionSettings[extensionName] = {};
+        }
+
+        settings = Object.assign(
+            {},
+            defaultSettings,
+            SillyTavern.getContext().extensionSettings[extensionName],
+        );
+
+        // 更新设置UI
+        $('#wbg-ai-source').val(settings.aiSource);
+        $('#wbg-api-url').val(settings.apiUrl);
+        $('#wbg-api-key').val(settings.apiKey);
+
+        const $modelSelect = $('#wbg-api-model');
+        if (settings.apiModel) {
+            $modelSelect
+                .empty()
+                .append(
+                    new Option(
+                        `${settings.apiModel} (已保存)`,
+                        settings.apiModel,
+                    ),
+                );
+            $modelSelect.val(settings.apiModel);
+        } else {
+            $modelSelect.empty().append(new Option('请先加载模型', ''));
+        }
+
+        toggleCustomApiSettings();
+    }
+
+    /**
+     * 保存插件设置。
+     */
+    function saveSettings(showToast = true) {
+        settings.aiSource = $('#wbg-ai-source').val();
+        settings.apiUrl = $('#wbg-api-url').val();
+        settings.apiKey = $('#wbg-api-key').val();
+        settings.apiModel = $('#wbg-api-model').val();
+
+        SillyTavern.getContext().extensionSettings[extensionName] = settings;
+        SillyTavern.getContext().saveSettingsDebounced();
+
+        if (showToast) {
+            toastr.success('API设置已保存！');
+        }
+    }
+
+
+    // -----------------------------------------------------------------
     // 2. SillyTavern API 封装
     // -----------------------------------------------------------------
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -640,10 +856,16 @@ jQuery(async () => {
                 `[${extensionName}] Final prompt for Foundation:`,
                 finalPrompt,
             );
-            const rawAiResponse = await tavernHelperApi.generateRaw({
+
+            const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_new_tokens: 8192,
-            });
+            };
+
+            const rawAiResponse =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(payload)
+                    : await tavernHelperApi.generateRaw(payload);
 
             projectState.generatedContent = rawAiResponse;
             $('#aiResponseTextArea').val(rawAiResponse);
@@ -748,10 +970,14 @@ jQuery(async () => {
                 `[${extensionName}] Final prompt for Outline:`,
                 finalPrompt,
             );
-            const rawAiResponse = await tavernHelperApi.generateRaw({
+            const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_new_tokens: 8192,
-            });
+            };
+            const rawAiResponse =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(payload)
+                    : await tavernHelperApi.generateRaw(payload);
 
             projectState.generatedOutlineContent = rawAiResponse;
             $('#aiResponseTextArea-stage2').val(rawAiResponse);
@@ -857,10 +1083,14 @@ jQuery(async () => {
                 `[${extensionName}] Final prompt for Detail:`,
                 finalPrompt,
             );
-            const rawAiResponse = await tavernHelperApi.generateRaw({
+            const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_new_tokens: 8192,
-            });
+            };
+            const rawAiResponse =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(payload)
+                    : await tavernHelperApi.generateRaw(payload);
 
             projectState.generatedDetailContent = rawAiResponse;
             $('#aiResponseTextArea-stage3').val(rawAiResponse);
@@ -969,10 +1199,14 @@ jQuery(async () => {
                 `[${extensionName}] Final prompt for Mechanics:`,
                 finalPrompt,
             );
-            const rawAiResponse = await tavernHelperApi.generateRaw({
+            const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_new_tokens: 8192,
-            });
+            };
+            const rawAiResponse =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(payload)
+                    : await tavernHelperApi.generateRaw(payload);
 
             projectState.generatedMechanicsContent = rawAiResponse;
             $('#aiResponseTextArea-stage4').val(rawAiResponse);
@@ -1157,22 +1391,37 @@ jQuery(async () => {
             const decomposerTemplate = await $.get(
                 `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
             );
-            const decomposerPrompt = decomposerTemplate.replace(
-                '{{core_theme}}',
-                autoGenState.coreTheme,
-            );
+            // 新增：将各阶段执行次数注入提示词
+            const decomposerPrompt = decomposerTemplate
+                .replace(
+                    '{{core_theme}}',
+                    autoGenState.coreTheme,
+                )
+                .replace('{{stage1_count}}', autoGenState.stageCounts.stage1)
+                .replace('{{stage2_count}}', autoGenState.stageCounts.stage2)
+                .replace('{{stage3_count}}', autoGenState.stageCounts.stage3)
+                .replace('{{stage4_count}}', autoGenState.stageCounts.stage4);
 
-            const decomposerResponse = await tavernHelperApi.generateRaw({
+
+            const decomposerPayload = {
                 ordered_prompts: [{ role: 'user', content: decomposerPrompt }],
                 max_new_tokens: 2048,
-            });
+            };
+            const decomposerResponse =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(decomposerPayload)
+                    : await tavernHelperApi.generateRaw(decomposerPayload);
 
             const cleanedDecomposerJson =
                 extractAndCleanJson(decomposerResponse);
             const instructions = JSON.parse(cleanedDecomposerJson);
-            if (!instructions.stage1_instruction) {
+            // 验证返回的是否是包含指令数组的有效结构
+            if (
+                !instructions.stage1_instruction ||
+                !Array.isArray(instructions.stage1_instruction)
+            ) {
                 throw new Error(
-                    '任务拆解失败，AI未返回有效的指令结构。请检查AI后端或提示词。',
+                    '任务拆解失败，AI未返回有效的指令数组结构。请检查AI后端或提示词。',
                 );
             }
             updateAutoGenStatus('任务拆解成功！');
@@ -1184,130 +1433,177 @@ jQuery(async () => {
             ]);
             const basePrompt = `${unrestrictPrompt}\n\n${writingGuide}\n\n`;
 
-            // 2. 执行阶段一
-            updateAutoGenStatus('开始执行第一阶段：世界基石生成...');
-            const stage1Template = await $.get(
-                `${extensionFolderPath}/generator-prompt.txt`,
-            );
-            const stage1FinalPrompt = (basePrompt + stage1Template)
-                .replace(/{{bookName}}/g, bookName)
-                .replace(/{{advancedOptions}}/g, '无')
-                .replace(/{{coreTheme}}/g, instructions.stage1_instruction);
+            // 2. 循环执行阶段一
+            const stage1Instructions = instructions.stage1_instruction || [];
+            for (let i = 0; i < stage1Instructions.length; i++) {
+                const instruction = stage1Instructions[i];
+                updateAutoGenStatus(
+                    `开始执行第一阶段 (${i + 1}/${
+                        stage1Instructions.length
+                    }): 世界基石...`,
+                );
+                const stage1Template = await $.get(
+                    `${extensionFolderPath}/generator-prompt.txt`,
+                );
+                const stage1FinalPrompt = (basePrompt + stage1Template)
+                    .replace(/{{bookName}}/g, bookName)
+                    .replace(/{{advancedOptions}}/g, '无')
+                    .replace(/{{coreTheme}}/g, instruction);
 
-            const stage1Response = await tavernHelperApi.generateRaw({
-                ordered_prompts: [
-                    { role: 'user', content: stage1FinalPrompt },
-                ],
-                max_new_tokens: 8192,
-            });
-            const stage1Entries = JSON.parse(
-                extractAndCleanJson(stage1Response),
-            );
-            for (const entry of stage1Entries) {
-                await createLorebookEntry(bookName, sanitizeEntry(entry));
+                const stage1Payload = {
+                    ordered_prompts: [
+                        { role: 'user', content: stage1FinalPrompt },
+                    ],
+                    max_new_tokens: 8192,
+                };
+                const stage1Response =
+                    settings.aiSource === 'custom'
+                        ? await callCustomApi(stage1Payload)
+                        : await tavernHelperApi.generateRaw(stage1Payload);
+                const stage1Entries = JSON.parse(
+                    extractAndCleanJson(stage1Response),
+                );
+                for (const entry of stage1Entries) {
+                    await createLorebookEntry(bookName, sanitizeEntry(entry));
+                }
+                updateAutoGenStatus(
+                    `第一阶段 (${i + 1}/${
+                        stage1Instructions.length
+                    }) 完成，生成了 ${stage1Entries.length} 个条目`,
+                );
             }
-            updateAutoGenStatus(
-                `第一阶段完成，生成了 ${stage1Entries.length} 个条目`,
-            );
 
-            // 3. 执行阶段二
-            updateAutoGenStatus('开始执行第二阶段：剧情构思...');
-            const stage2Template = await $.get(
-                `${extensionFolderPath}/story-prompt.txt`,
-            );
-            const currentEntriesS2 = await getLorebookEntries(bookName);
-            const stage2FinalPrompt = (basePrompt + stage2Template)
-                .replace(
-                    /{{world_book_entries}}/g,
-                    JSON.stringify(currentEntriesS2, null, 2),
-                )
-                .replace(
-                    /{{plot_elements}}/g,
-                    instructions.stage2_instruction,
-                )
-                .replace(/{{plotOptions}}/g, '无');
+            // 3. 循环执行阶段二
+            const stage2Instructions = instructions.stage2_instruction || [];
+            for (let i = 0; i < stage2Instructions.length; i++) {
+                const instruction = stage2Instructions[i];
+                updateAutoGenStatus(
+                    `开始执行第二阶段 (${i + 1}/${
+                        stage2Instructions.length
+                    }): 剧情构思...`,
+                );
+                const stage2Template = await $.get(
+                    `${extensionFolderPath}/story-prompt.txt`,
+                );
+                const currentEntriesS2 = await getLorebookEntries(bookName);
+                const stage2FinalPrompt = (basePrompt + stage2Template)
+                    .replace(
+                        /{{world_book_entries}}/g,
+                        JSON.stringify(currentEntriesS2, null, 2),
+                    )
+                    .replace(/{{plot_elements}}/g, instruction)
+                    .replace(/{{plotOptions}}/g, '无');
 
-            const stage2Response = await tavernHelperApi.generateRaw({
-                ordered_prompts: [
-                    { role: 'user', content: stage2FinalPrompt },
-                ],
-                max_new_tokens: 8192,
-            });
-            const stage2Entries = JSON.parse(
-                extractAndCleanJson(stage2Response),
-            );
-            for (const entry of stage2Entries) {
-                await createLorebookEntry(bookName, sanitizeEntry(entry));
+                const stage2Payload = {
+                    ordered_prompts: [
+                        { role: 'user', content: stage2FinalPrompt },
+                    ],
+                    max_new_tokens: 8192,
+                };
+                const stage2Response =
+                    settings.aiSource === 'custom'
+                        ? await callCustomApi(stage2Payload)
+                        : await tavernHelperApi.generateRaw(stage2Payload);
+                const stage2Entries = JSON.parse(
+                    extractAndCleanJson(stage2Response),
+                );
+                for (const entry of stage2Entries) {
+                    await createLorebookEntry(bookName, sanitizeEntry(entry));
+                }
+                updateAutoGenStatus(
+                    `第二阶段 (${i + 1}/${
+                        stage2Instructions.length
+                    }) 完成，生成了 ${stage2Entries.length} 个条目`,
+                );
             }
-            updateAutoGenStatus(
-                `第二阶段完成，生成了 ${stage2Entries.length} 个条目`,
-            );
 
-            // 4. 执行阶段三
-            updateAutoGenStatus('开始执行第三阶段：细节填充...');
-            const stage3Template = await $.get(
-                `${extensionFolderPath}/detail-prompt.txt`,
-            );
-            const currentEntriesS3 = await getLorebookEntries(bookName);
-            const stage3FinalPrompt = (basePrompt + stage3Template)
-                .replace(
-                    /{{world_book_entries}}/g,
-                    JSON.stringify(currentEntriesS3, null, 2),
-                )
-                .replace(
-                    /{{detail_elements}}/g,
-                    instructions.stage3_instruction,
-                )
-                .replace(/{{detailOptions}}/g, '无');
+            // 4. 循环执行阶段三
+            const stage3Instructions = instructions.stage3_instruction || [];
+            for (let i = 0; i < stage3Instructions.length; i++) {
+                const instruction = stage3Instructions[i];
+                updateAutoGenStatus(
+                    `开始执行第三阶段 (${i + 1}/${
+                        stage3Instructions.length
+                    }): 细节填充...`,
+                );
+                const stage3Template = await $.get(
+                    `${extensionFolderPath}/detail-prompt.txt`,
+                );
+                const currentEntriesS3 = await getLorebookEntries(bookName);
+                const stage3FinalPrompt = (basePrompt + stage3Template)
+                    .replace(
+                        /{{world_book_entries}}/g,
+                        JSON.stringify(currentEntriesS3, null, 2),
+                    )
+                    .replace(/{{detail_elements}}/g, instruction)
+                    .replace(/{{detailOptions}}/g, '无');
 
-            const stage3Response = await tavernHelperApi.generateRaw({
-                ordered_prompts: [
-                    { role: 'user', content: stage3FinalPrompt },
-                ],
-                max_new_tokens: 8192,
-            });
-            const stage3Entries = JSON.parse(
-                extractAndCleanJson(stage3Response),
-            );
-            for (const entry of stage3Entries) {
-                await createLorebookEntry(bookName, sanitizeEntry(entry));
+                const stage3Payload = {
+                    ordered_prompts: [
+                        { role: 'user', content: stage3FinalPrompt },
+                    ],
+                    max_new_tokens: 8192,
+                };
+                const stage3Response =
+                    settings.aiSource === 'custom'
+                        ? await callCustomApi(stage3Payload)
+                        : await tavernHelperApi.generateRaw(stage3Payload);
+                const stage3Entries = JSON.parse(
+                    extractAndCleanJson(stage3Response),
+                );
+                for (const entry of stage3Entries) {
+                    await createLorebookEntry(bookName, sanitizeEntry(entry));
+                }
+                updateAutoGenStatus(
+                    `第三阶段 (${i + 1}/${
+                        stage3Instructions.length
+                    }) 完成，生成了 ${stage3Entries.length} 个条目`,
+                );
             }
-            updateAutoGenStatus(
-                `第三阶段完成，生成了 ${stage3Entries.length} 个条目`,
-            );
 
-            // 5. 执行阶段四
-            updateAutoGenStatus('开始执行第四阶段：机制设计...');
-            const stage4Template = await $.get(
-                `${extensionFolderPath}/mechanics-prompt.txt`,
-            );
-            const currentEntriesS4 = await getLorebookEntries(bookName);
-            const stage4FinalPrompt = (basePrompt + stage4Template)
-                .replace(
-                    /{{world_book_entries}}/g,
-                    JSON.stringify(currentEntriesS4, null, 2),
-                )
-                .replace(
-                    /{{mechanics_elements}}/g,
-                    instructions.stage4_instruction,
-                )
-                .replace(/{{mechanicsOptions}}/g, '无');
+            // 5. 循环执行阶段四
+            const stage4Instructions = instructions.stage4_instruction || [];
+            for (let i = 0; i < stage4Instructions.length; i++) {
+                const instruction = stage4Instructions[i];
+                updateAutoGenStatus(
+                    `开始执行第四阶段 (${i + 1}/${
+                        stage4Instructions.length
+                    }): 机制设计...`,
+                );
+                const stage4Template = await $.get(
+                    `${extensionFolderPath}/mechanics-prompt.txt`,
+                );
+                const currentEntriesS4 = await getLorebookEntries(bookName);
+                const stage4FinalPrompt = (basePrompt + stage4Template)
+                    .replace(
+                        /{{world_book_entries}}/g,
+                        JSON.stringify(currentEntriesS4, null, 2),
+                    )
+                    .replace(/{{mechanics_elements}}/g, instruction)
+                    .replace(/{{mechanicsOptions}}/g, '无');
 
-            const stage4Response = await tavernHelperApi.generateRaw({
-                ordered_prompts: [
-                    { role: 'user', content: stage4FinalPrompt },
-                ],
-                max_new_tokens: 8192,
-            });
-            const stage4Entries = JSON.parse(
-                extractAndCleanJson(stage4Response),
-            );
-            for (const entry of stage4Entries) {
-                await createLorebookEntry(bookName, sanitizeEntry(entry));
+                const stage4Payload = {
+                    ordered_prompts: [
+                        { role: 'user', content: stage4FinalPrompt },
+                    ],
+                    max_new_tokens: 8192,
+                };
+                const stage4Response =
+                    settings.aiSource === 'custom'
+                        ? await callCustomApi(stage4Payload)
+                        : await tavernHelperApi.generateRaw(stage4Payload);
+                const stage4Entries = JSON.parse(
+                    extractAndCleanJson(stage4Response),
+                );
+                for (const entry of stage4Entries) {
+                    await createLorebookEntry(bookName, sanitizeEntry(entry));
+                }
+                updateAutoGenStatus(
+                    `第四阶段 (${i + 1}/${
+                        stage4Instructions.length
+                    }) 完成，生成了 ${stage4Entries.length} 个条目`,
+                );
             }
-            updateAutoGenStatus(
-                `第四阶段完成，生成了 ${stage4Entries.length} 个条目`,
-            );
 
             // 最终成功
             updateAutoGenStatus('恭喜！全自动生成流程已成功完成！');
@@ -1341,15 +1637,25 @@ jQuery(async () => {
             return;
         }
 
+        // 新增：读取各阶段执行次数
+        const stageCounts = {
+            stage1: parseInt($('#stage1Count').val(), 10) || 1,
+            stage2: parseInt($('#stage2Count').val(), 10) || 1,
+            stage3: parseInt($('#stage3Count').val(), 10) || 1,
+            stage4: parseInt($('#stage4Count').val(), 10) || 1,
+        };
+
         // 重置并初始化状态
         Object.assign(autoGenState, {
             isRunning: true,
             bookName: bookName,
             coreTheme: coreTheme,
+            stageCounts: stageCounts, // 存入状态
             progress: [],
             isFinished: false,
             error: null,
         });
+
 
         // 更新UI
         $('#auto-gen-status').show();
@@ -1433,6 +1739,19 @@ jQuery(async () => {
             // 在HTML加载后，初始化更新器
             const updater = new WBGUpdater();
             await updater.init();
+
+            // 新增：加载API设置并绑定事件
+            loadSettings();
+            $('#wbg-ai-source').on('change', () => {
+                toggleCustomApiSettings();
+                saveSettings(false);
+            });
+            $('#wbg-api-url').on('input', () => saveSettings(false));
+            $('#wbg-api-key').on('input', () => saveSettings(false));
+            $('#wbg-api-model').on('change', () => saveSettings(false));
+            $('#wbg-save-api').on('click', () => saveSettings(true));
+            $('#wbg-fetch-models').on('click', fetchApiModels);
+
         } catch (error) {
             console.error(
                 `[${extensionName}] Failed to load HTML files.`,
