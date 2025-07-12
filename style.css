@@ -151,6 +151,7 @@ body::-webkit-scrollbar {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
+    color: #333; /* 固定为深灰色以确保可读性 */
 }
 
 .input-group input[type="text"],
@@ -158,9 +159,9 @@ body::-webkit-scrollbar {
     width: 100%;
     padding: 10px;
     border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background-color: var(--primary-bg);
-    color: var(--text-color);
+    border: 1px solid #ccc; /* 固定边框颜色 */
+    background-color: #fff; /* 固定背景为白色 */
+    color: #333; /* 固定文字为深灰色 */
     box-sizing: border-box;
 }
 
@@ -335,16 +336,16 @@ details[open] > .summary-as-button::before {
 
 .advanced-option-item label {
     font-size: 0.95em;
-    color: #ddd;
+    color: #333; /* 固定为深灰色以确保可读性 */
     font-weight: bold;
 }
 
 .advanced-option-item select {
     width: 100%;
     padding: 6px;
-    background-color: #333;
-    color: #eee;
-    border: 1px solid #555;
+    background-color: #fff; /* 固定背景为白色 */
+    color: #333; /* 固定文字为深灰色 */
+    border: 1px solid #ccc; /* 固定边框颜色 */
     border-radius: 4px;
 }
 
@@ -374,6 +375,32 @@ details[open] > .summary-as-button::before {
 }
 
 .stage-button.active {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
+    transform: translateY(-2px);
+}
+
+/* 剧情频道切换按钮样式 (继承自 stage-button) */
+.channel-button {
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.channel-button:hover {
+    background-color: var(--button-hover-bg);
+    border-color: var(--accent-color);
+}
+
+.channel-button.active {
     background-color: var(--accent-color);
     color: white;
     border-color: var(--accent-color);
