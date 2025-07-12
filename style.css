@@ -151,7 +151,6 @@ body::-webkit-scrollbar {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #333; /* 固定为深灰色以确保可读性 */
 }
 
 .input-group input[type="text"],
@@ -159,9 +158,9 @@ body::-webkit-scrollbar {
     width: 100%;
     padding: 10px;
     border-radius: 6px;
-    border: 1px solid #ccc; /* 固定边框颜色 */
-    background-color: #fff; /* 固定背景为白色 */
-    color: #333; /* 固定文字为深灰色 */
+    border: 1px solid var(--border-color);
+    background-color: var(--primary-bg);
+    color: var(--text-color);
     box-sizing: border-box;
 }
 
@@ -336,16 +335,16 @@ details[open] > .summary-as-button::before {
 
 .advanced-option-item label {
     font-size: 0.95em;
-    color: #333; /* 固定为深灰色以确保可读性 */
+    color: #ddd;
     font-weight: bold;
 }
 
 .advanced-option-item select {
     width: 100%;
     padding: 6px;
-    background-color: #fff; /* 固定背景为白色 */
-    color: #333; /* 固定文字为深灰色 */
-    border: 1px solid #ccc; /* 固定边框颜色 */
+    background-color: #333;
+    color: #eee;
+    border: 1px solid #555;
     border-radius: 4px;
 }
 
