@@ -27,6 +27,43 @@ jQuery(async () => {
         error: null,
     };
 
+    const resetAutoGenState = () => {
+        // Reset the state object
+        Object.assign(autoGenState, {
+            isRunning: false,
+            isFinished: false,
+            progress: [],
+            bookName: '',
+            coreTheme: '',
+            error: null,
+            stageCounts: undefined,
+        });
+
+        // Clear the UI
+        const statusList = document.querySelector('#auto-gen-status-list');
+        if (statusList) statusList.innerHTML = '';
+        const statusContainer = document.querySelector('#auto-gen-status');
+        if (statusContainer) statusContainer.style.display = 'none';
+        const finishedButtons = document.querySelector('#wbg-autogen-finished-buttons');
+        if (finishedButtons) finishedButtons.style.display = 'none';
+        const runButton = document.querySelector('#runAutoGenerationButton');
+        if (runButton) runButton.disabled = false;
+
+        // Reset input fields
+        const autoBookName = document.querySelector('#autoBookName');
+        if (autoBookName) autoBookName.value = '';
+        const autoCoreTheme = document.querySelector('#autoCoreTheme');
+        if (autoCoreTheme) autoCoreTheme.value = '';
+        const stage1Count = document.querySelector('#stage1Count');
+        if (stage1Count) stage1Count.value = 1;
+        const stage2Count = document.querySelector('#stage2Count');
+        if (stage2Count) stage2Count.value = 1;
+        const stage3Count = document.querySelector('#stage3Count');
+        if (stage3Count) stage3Count.value = 1;
+        const stage4Count = document.querySelector('#stage4Count');
+        if (stage4Count) stage4Count.value = 1;
+    };
+
     // 用于存储从外部JSON文件加载的数据的全局变量
     let worldElementPool = {};
     let detailElementPool = {};
@@ -161,7 +198,7 @@ jQuery(async () => {
                     'wbg-current-version',
                 );
                 if (versionDisplay) {
-                    versionDisplay.textContent = '错误';
+                    versionDisplay.textContent = 'v?.?.?';
                 }
             }
         }
@@ -170,15 +207,15 @@ jQuery(async () => {
             this.elements.checkButton.addEventListener('click', () =>
                 this.checkForUpdates(true),
             );
-            this.elements.autoUpdateToggle.addEventListener(
-                'change',
-                (event) => {
-                    localStorage.setItem(this.storageKey, event.target.checked);
-                    toastr.info(
-                        `自动检查更新已${event.target.checked ? '开启' : '关闭'}`,
-                    );
-                },
-            );
+            this.elements.autoUpdateToggle.addEventListener('change', (e) => {
+                localStorage.setItem(this.storageKey, e.target.checked);
+                if (e.target.checked) {
+                    toastr.success('已开启自动更新检查。');
+                    this.checkForUpdates(false);
+                } else {
+                    toastr.info('已关闭自动更新检查。');
+                }
+            });
         }
 
         loadSettings() {
@@ -588,39 +625,6 @@ jQuery(async () => {
         }
         return sanitized;
     }
-
-    /**
-     * 带有重试机制的任务执行器
-     * @param {Function} taskFunction - 要执行的异步任务函数
-     * @param {number} maxRetries - 最大重试次数
-     * @param {number} retryDelay - 重试前的延迟（毫秒）
-     * @returns {Promise<any>} - 任务函数的返回值
-     */
-    async function executeStageTaskWithRetry(
-        taskFunction,
-        maxRetries = 3,
-        retryDelay = 2000,
-    ) {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                return await taskFunction(); // 尝试执行任务
-            } catch (error) {
-                if (attempt < maxRetries) {
-                    // 记录重试信息
-                    updateAutoGenStatus(
-                        `错误: ${error.message}. 正在进行第 ${attempt}/${maxRetries} 次重试...`,
-                    );
-                    await delay(retryDelay); // 等待后重试
-                } else {
-                    // 如果所有重试都失败，则抛出最终错误
-                    throw new Error(
-                        `在 ${maxRetries} 次尝试后仍然失败: ${error.message}`,
-                    );
-                }
-            }
-        }
-    }
-
     function setActiveStage(stageNumber) {
         projectState.currentStage = stageNumber;
         // 更新阶段内容显示
@@ -1410,6 +1414,35 @@ jQuery(async () => {
 
     // 真正的后台生成任务
     async function doAutomatedGeneration() {
+        const maxRetries = 3;
+        const retryDelay = 2000;
+
+        /**
+         * 新的、精确的重试辅助函数
+         * @param {Function} taskFn - 要执行的异步任务函数
+         * @param {string} taskName - 用于日志记录的任务名称
+         * @returns {Promise<any>} - 任务函数的返回值
+         */
+        const executeTaskWithRetry = async (taskFn, taskName) => {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    return await taskFn(); // 尝试执行任务
+                } catch (error) {
+                    if (attempt < maxRetries) {
+                        updateAutoGenStatus(
+                            `错误: ${taskName}失败 - ${error.message}. 正在进行第 ${attempt}/${maxRetries} 次重试...`,
+                        );
+                        await delay(retryDelay);
+                    } else {
+                        // 在所有重试失败后，抛出最终错误
+                        throw new Error(
+                            `${taskName}在 ${maxRetries} 次尝试后仍然失败: ${error.message}`,
+                        );
+                    }
+                }
+            }
+        };
+
         try {
             const bookName = autoGenState.bookName;
             // 0. 创建世界书
@@ -1418,9 +1451,9 @@ jQuery(async () => {
             localStorage.setItem('wbg_lastBookName', bookName);
             updateAutoGenStatus(`已创建世界书 '${bookName}'`);
 
-            // 1. 任务拆解 (带重试)
+            // 1. 任务拆解
             updateAutoGenStatus('正在请求“盘古”AI拆解核心任务...');
-            const instructions = await executeStageTaskWithRetry(async () => {
+            const decomposerTask = async () => {
                 const decomposerTemplate = await $.get(
                     `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
                 );
@@ -1462,11 +1495,15 @@ jQuery(async () => {
                     !Array.isArray(parsedInstructions.stage1_instruction)
                 ) {
                     throw new Error(
-                        '任务拆解失败，AI未返回有效的指令数组结构。',
+                        'AI未返回有效的指令数组结构。',
                     );
                 }
                 return parsedInstructions;
-            });
+            };
+            const instructions = await executeTaskWithRetry(
+                decomposerTask,
+                '任务拆解',
+            );
             updateAutoGenStatus('任务拆解成功！');
 
             // 加载通用提示词
@@ -1476,126 +1513,117 @@ jQuery(async () => {
             ]);
             const basePrompt = `${unrestrictPrompt}\n\n${writingGuide}\n\n`;
 
-            // 定义一个通用的阶段执行函数
-            const executeStage = async (
-                stageName,
-                stageNum,
-                instructions,
-                promptFile,
-                promptReplacer,
-            ) => {
-                for (let i = 0; i < instructions.length; i++) {
-                    const instruction = instructions[i];
-                    updateAutoGenStatus(
-                        `开始执行第${stageName}阶段 (${i + 1}/${
-                            instructions.length
-                        })...`,
-                    );
+            // 定义所有阶段
+            const stages = [
+                {
+                    name: '一 (世界基石)',
+                    instructions: instructions.stage1_instruction || [],
+                    promptFile: 'generator-prompt.txt',
+                    promptReplacer: (template, instruction) =>
+                        template
+                            .replace(/{{bookName}}/g, bookName)
+                            .replace(/{{advancedOptions}}/g, '无')
+                            .replace(/{{coreTheme}}/g, instruction),
+                },
+                {
+                    name: '二 (剧情构思)',
+                    instructions: instructions.stage2_instruction || [],
+                    promptFile: 'story-prompt.txt',
+                    promptReplacer: (template, instruction, entries) =>
+                        template
+                            .replace(
+                                /{{world_book_entries}}/g,
+                                JSON.stringify(entries, null, 2),
+                            )
+                            .replace(/{{plot_elements}}/g, instruction)
+                            .replace(/{{plotOptions}}/g, '无'),
+                },
+                {
+                    name: '三 (细节填充)',
+                    instructions: instructions.stage3_instruction || [],
+                    promptFile: 'detail-prompt.txt',
+                    promptReplacer: (template, instruction, entries) =>
+                        template
+                            .replace(
+                                /{{world_book_entries}}/g,
+                                JSON.stringify(entries, null, 2),
+                            )
+                            .replace(/{{detail_elements}}/g, instruction)
+                            .replace(/{{detailOptions}}/g, '无'),
+                },
+                {
+                    name: '四 (机制设计)',
+                    instructions: instructions.stage4_instruction || [],
+                    promptFile: 'mechanics-prompt.txt',
+                    promptReplacer: (template, instruction, entries) =>
+                        template
+                            .replace(
+                                /{{world_book_entries}}/g,
+                                JSON.stringify(entries, null, 2),
+                            )
+                            .replace(/{{mechanics_elements}}/g, instruction)
+                            .replace(/{{mechanicsOptions}}/g, '无'),
+                },
+            ];
 
-                    const task = async () => {
-                        const stageTemplate = await $.get(
-                            `${extensionFolderPath}/${promptFile}`,
-                        );
-                        const currentEntries = await getLorebookEntries(
-                            bookName,
-                        );
-                        const finalPrompt = promptReplacer(
+            // 循环执行所有阶段
+            for (const stage of stages) {
+                if (stage.instructions.length === 0) continue;
+
+                const stageTemplate = await $.get(
+                    `${extensionFolderPath}/${stage.promptFile}`,
+                );
+
+                for (let i = 0; i < stage.instructions.length; i++) {
+                    const instruction = stage.instructions[i];
+                    const taskDisplayName = `${stage.name} (${i + 1}/${
+                        stage.instructions.length
+                    })`;
+                    updateAutoGenStatus(`开始执行 ${taskDisplayName}...`);
+
+                    // 定义要重试的完整任务：获取上下文、构建提示、调用AI、解析结果
+                    const generationTask = async () => {
+                        // 1. 获取最新上下文
+                        const currentEntries = await getLorebookEntries(bookName);
+                        // 2. 构建完整提示词
+                        const finalPrompt = stage.promptReplacer(
                             basePrompt + stageTemplate,
                             instruction,
                             currentEntries,
                         );
-
                         const payload = {
                             ordered_prompts: [
                                 { role: 'user', content: finalPrompt },
                             ],
                             max_new_tokens: 8192,
                         };
+                        // 3. 调用AI
                         const response =
                             settings.aiSource === 'custom'
                                 ? await callCustomApi(payload)
                                 : await tavernHelperApi.generateRaw(payload);
-                        const entries = JSON.parse(
-                            extractAndCleanJson(response),
-                        );
-                        for (const entry of entries) {
-                            await createLorebookEntry(
-                                bookName,
-                                sanitizeEntry(entry),
-                            );
-                        }
-                        return entries.length;
+                        // 4. 解析并返回结果
+                        return JSON.parse(extractAndCleanJson(response));
                     };
 
-                    const entriesCount = await executeStageTaskWithRetry(task);
+                    // 执行带重试的任务
+                    const entries = await executeTaskWithRetry(
+                        generationTask,
+                        taskDisplayName,
+                    );
+
+                    // 上传结果 (不在重试循环内)
+                    for (const entry of entries) {
+                        await createLorebookEntry(
+                            bookName,
+                            sanitizeEntry(entry),
+                        );
+                    }
                     updateAutoGenStatus(
-                        `第${stageName}阶段 (${i + 1}/${
-                            instructions.length
-                        }) 完成，生成了 ${entriesCount} 个条目`,
+                        `${taskDisplayName} 完成，生成了 ${entries.length} 个条目`,
                     );
                 }
-            };
-
-            // 2. 执行阶段一
-            await executeStage(
-                '一 (世界基石)',
-                1,
-                instructions.stage1_instruction || [],
-                'generator-prompt.txt',
-                (template, instruction) =>
-                    template
-                        .replace(/{{bookName}}/g, bookName)
-                        .replace(/{{advancedOptions}}/g, '无')
-                        .replace(/{{coreTheme}}/g, instruction),
-            );
-
-            // 3. 执行阶段二
-            await executeStage(
-                '二 (剧情构思)',
-                2,
-                instructions.stage2_instruction || [],
-                'story-prompt.txt',
-                (template, instruction, entries) =>
-                    template
-                        .replace(
-                            /{{world_book_entries}}/g,
-                            JSON.stringify(entries, null, 2),
-                        )
-                        .replace(/{{plot_elements}}/g, instruction)
-                        .replace(/{{plotOptions}}/g, '无'),
-            );
-
-            // 4. 执行阶段三
-            await executeStage(
-                '三 (细节填充)',
-                3,
-                instructions.stage3_instruction || [],
-                'detail-prompt.txt',
-                (template, instruction, entries) =>
-                    template
-                        .replace(
-                            /{{world_book_entries}}/g,
-                            JSON.stringify(entries, null, 2),
-                        )
-                        .replace(/{{detail_elements}}/g, instruction)
-                        .replace(/{{detailOptions}}/g, '无'),
-            );
-
-            // 5. 执行阶段四
-            await executeStage(
-                '四 (机制设计)',
-                4,
-                instructions.stage4_instruction || [],
-                'mechanics-prompt.txt',
-                (template, instruction, entries) =>
-                    template
-                        .replace(
-                            /{{world_book_entries}}/g,
-                            JSON.stringify(entries, null, 2),
-                        )
-                        .replace(/{{mechanics_elements}}/g, instruction)
-                        .replace(/{{mechanicsOptions}}/g, '无'),
-            );
+            }
 
             // 最终成功
             updateAutoGenStatus('恭喜！全自动生成流程已成功完成！');
@@ -1611,6 +1639,12 @@ jQuery(async () => {
             console.error(`[${extensionName}] 自动化生成失败:`, error);
             toastr.error(errorMessage, '自动化生成失败');
             updateAutoGenStatus(errorMessage); // This will set isRunning to false
+        } finally {
+            // 无论成功或失败，任务结束后都显示完成按钮
+            const finishedButtons = document.querySelector('#wbg-autogen-finished-buttons');
+            if (finishedButtons) {
+                finishedButtons.style.display = 'flex';
+            }
         }
     }
 
@@ -1811,6 +1845,15 @@ jQuery(async () => {
 
         // 自动化页面按钮
         $('#runAutoGenerationButton').on('click', runAutomatedGeneration);
+        $('#wbg-autogen-back-to-home').on('click', () => {
+            $('#wbg-auto-generator-page').hide();
+            $('#wbg-landing-page').show();
+        });
+        $('#wbg-autogen-finish-task').on('click', () => {
+            resetAutoGenState();
+            $('#wbg-auto-generator-page').hide();
+            $('#wbg-landing-page').show();
+        });
 
         // 阶段选择器
         $('#wbg-stage-selector').on('click', '.stage-button', function () {
