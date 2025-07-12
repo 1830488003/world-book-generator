@@ -17,6 +17,16 @@ jQuery(async () => {
         generatedMechanicsContent: null,
     };
 
+    // 新增：自动化后台任务状态
+    const autoGenState = {
+        isRunning: false,
+        bookName: '',
+        coreTheme: '',
+        progress: [],
+        isFinished: false,
+        error: null,
+    };
+
     // 用于存储从外部JSON文件加载的数据的全局变量
     let worldElementPool = {};
     let detailElementPool = {};
@@ -1045,8 +1055,308 @@ jQuery(async () => {
         });
         $('#bookName').val('').prop('disabled', false);
         $('#wbg-landing-page').hide();
+        $('#wbg-auto-generator-page').hide();
         $('#wbg-generator-page').show();
         setActiveStage(1);
+    }
+
+    function handleStartAuto() {
+        // 如果上次的任务已完成，重置状态以开始新任务
+        if (autoGenState.isFinished) {
+            Object.assign(autoGenState, {
+                isRunning: false,
+                bookName: '',
+                coreTheme: '',
+                progress: [],
+                isFinished: false,
+                error: null,
+            });
+            // 清理UI
+            $('#autoBookName').val('').prop('disabled', false);
+            $('#autoCoreTheme').val('').prop('disabled', false);
+            $('#auto-gen-status-list').empty();
+            $('#auto-gen-status').hide();
+        }
+
+        $('#wbg-landing-page').hide();
+        $('#wbg-generator-page').hide();
+        $('#wbg-auto-generator-page').show();
+    }
+
+    // 新的UI渲染函数：根据autoGenState渲染进度
+    function renderAutoGenProgress() {
+        if (!$('#wbg-auto-generator-page').is(':visible')) {
+            return; // 如果页面不可见，不执行渲染
+        }
+
+        const statusList = $('#auto-gen-status-list');
+        statusList.empty();
+
+        const successIcon =
+            '<i class="fa-solid fa-check-circle" style="color: #4CAF50;"></i>';
+        const spinnerIcon = '<i class="fas fa-spinner fa-spin"></i>';
+        const errorIcon =
+            '<i class="fa-solid fa-times-circle" style="color: #F44336;"></i>';
+
+        autoGenState.progress.forEach((msg, index) => {
+            let icon;
+            const isLastMessage = index === autoGenState.progress.length - 1;
+
+            if (msg.toLowerCase().startsWith('错误')) {
+                icon = errorIcon;
+            } else if (isLastMessage && !autoGenState.isFinished) {
+                icon = spinnerIcon; // 最后一条消息且未完成，显示旋转
+            } else {
+                icon = successIcon; // 其他所有（已完成的）消息都显示成功
+            }
+            statusList.append($(`<li>${icon} ${msg}</li>`));
+        });
+
+        // 更新按钮和输入框状态
+        if (autoGenState.isRunning) {
+            $('#runAutoGenerationButton')
+                .prop('disabled', true)
+                .text('正在全速生成中...');
+            $('#autoBookName').val(autoGenState.bookName).prop('disabled', true);
+            $('#autoCoreTheme')
+                .val(autoGenState.coreTheme)
+                .prop('disabled', true);
+        } else {
+            $('#runAutoGenerationButton')
+                .prop('disabled', false)
+                .text('开始全自动生成');
+            $('#autoBookName').prop('disabled', false);
+            $('#autoCoreTheme').prop('disabled', false);
+        }
+    }
+
+    // 辅助函数：更新后台任务状态并触发UI渲染
+    function updateAutoGenStatus(message) {
+        if (message.toLowerCase().startsWith('错误')) {
+            autoGenState.error = message;
+            autoGenState.isRunning = false;
+            autoGenState.isFinished = true;
+        }
+
+        autoGenState.progress.push(message);
+        renderAutoGenProgress(); // 触发UI更新
+    }
+
+    // 真正的后台生成任务
+    async function doAutomatedGeneration() {
+        try {
+            const bookName = autoGenState.bookName;
+            // 0. 创建世界书
+            await createLorebook(bookName);
+            projectState.bookName = bookName;
+            localStorage.setItem('wbg_lastBookName', bookName);
+            updateAutoGenStatus(`已创建世界书 '${bookName}'`);
+
+            // 1. 任务拆解
+            updateAutoGenStatus('正在请求“盘古”AI拆解核心任务...');
+            const decomposerTemplate = await $.get(
+                `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
+            );
+            const decomposerPrompt = decomposerTemplate.replace(
+                '{{core_theme}}',
+                autoGenState.coreTheme,
+            );
+
+            const decomposerResponse = await tavernHelperApi.generateRaw({
+                ordered_prompts: [{ role: 'user', content: decomposerPrompt }],
+                max_new_tokens: 2048,
+            });
+
+            const cleanedDecomposerJson =
+                extractAndCleanJson(decomposerResponse);
+            const instructions = JSON.parse(cleanedDecomposerJson);
+            if (!instructions.stage1_instruction) {
+                throw new Error(
+                    '任务拆解失败，AI未返回有效的指令结构。请检查AI后端或提示词。',
+                );
+            }
+            updateAutoGenStatus('任务拆解成功！');
+
+            // 加载通用提示词
+            const [unrestrictPrompt, writingGuide] = await Promise.all([
+                $.get(`${extensionFolderPath}/unrestrict-prompt.txt`),
+                $.get(`${extensionFolderPath}/writing-guide.txt`),
+            ]);
+            const basePrompt = `${unrestrictPrompt}\n\n${writingGuide}\n\n`;
+
+            // 2. 执行阶段一
+            updateAutoGenStatus('开始执行第一阶段：世界基石生成...');
+            const stage1Template = await $.get(
+                `${extensionFolderPath}/generator-prompt.txt`,
+            );
+            const stage1FinalPrompt = (basePrompt + stage1Template)
+                .replace(/{{bookName}}/g, bookName)
+                .replace(/{{advancedOptions}}/g, '无')
+                .replace(/{{coreTheme}}/g, instructions.stage1_instruction);
+
+            const stage1Response = await tavernHelperApi.generateRaw({
+                ordered_prompts: [
+                    { role: 'user', content: stage1FinalPrompt },
+                ],
+                max_new_tokens: 8192,
+            });
+            const stage1Entries = JSON.parse(
+                extractAndCleanJson(stage1Response),
+            );
+            for (const entry of stage1Entries) {
+                await createLorebookEntry(bookName, sanitizeEntry(entry));
+            }
+            updateAutoGenStatus(
+                `第一阶段完成，生成了 ${stage1Entries.length} 个条目`,
+            );
+
+            // 3. 执行阶段二
+            updateAutoGenStatus('开始执行第二阶段：剧情构思...');
+            const stage2Template = await $.get(
+                `${extensionFolderPath}/story-prompt.txt`,
+            );
+            const currentEntriesS2 = await getLorebookEntries(bookName);
+            const stage2FinalPrompt = (basePrompt + stage2Template)
+                .replace(
+                    /{{world_book_entries}}/g,
+                    JSON.stringify(currentEntriesS2, null, 2),
+                )
+                .replace(
+                    /{{plot_elements}}/g,
+                    instructions.stage2_instruction,
+                )
+                .replace(/{{plotOptions}}/g, '无');
+
+            const stage2Response = await tavernHelperApi.generateRaw({
+                ordered_prompts: [
+                    { role: 'user', content: stage2FinalPrompt },
+                ],
+                max_new_tokens: 8192,
+            });
+            const stage2Entries = JSON.parse(
+                extractAndCleanJson(stage2Response),
+            );
+            for (const entry of stage2Entries) {
+                await createLorebookEntry(bookName, sanitizeEntry(entry));
+            }
+            updateAutoGenStatus(
+                `第二阶段完成，生成了 ${stage2Entries.length} 个条目`,
+            );
+
+            // 4. 执行阶段三
+            updateAutoGenStatus('开始执行第三阶段：细节填充...');
+            const stage3Template = await $.get(
+                `${extensionFolderPath}/detail-prompt.txt`,
+            );
+            const currentEntriesS3 = await getLorebookEntries(bookName);
+            const stage3FinalPrompt = (basePrompt + stage3Template)
+                .replace(
+                    /{{world_book_entries}}/g,
+                    JSON.stringify(currentEntriesS3, null, 2),
+                )
+                .replace(
+                    /{{detail_elements}}/g,
+                    instructions.stage3_instruction,
+                )
+                .replace(/{{detailOptions}}/g, '无');
+
+            const stage3Response = await tavernHelperApi.generateRaw({
+                ordered_prompts: [
+                    { role: 'user', content: stage3FinalPrompt },
+                ],
+                max_new_tokens: 8192,
+            });
+            const stage3Entries = JSON.parse(
+                extractAndCleanJson(stage3Response),
+            );
+            for (const entry of stage3Entries) {
+                await createLorebookEntry(bookName, sanitizeEntry(entry));
+            }
+            updateAutoGenStatus(
+                `第三阶段完成，生成了 ${stage3Entries.length} 个条目`,
+            );
+
+            // 5. 执行阶段四
+            updateAutoGenStatus('开始执行第四阶段：机制设计...');
+            const stage4Template = await $.get(
+                `${extensionFolderPath}/mechanics-prompt.txt`,
+            );
+            const currentEntriesS4 = await getLorebookEntries(bookName);
+            const stage4FinalPrompt = (basePrompt + stage4Template)
+                .replace(
+                    /{{world_book_entries}}/g,
+                    JSON.stringify(currentEntriesS4, null, 2),
+                )
+                .replace(
+                    /{{mechanics_elements}}/g,
+                    instructions.stage4_instruction,
+                )
+                .replace(/{{mechanicsOptions}}/g, '无');
+
+            const stage4Response = await tavernHelperApi.generateRaw({
+                ordered_prompts: [
+                    { role: 'user', content: stage4FinalPrompt },
+                ],
+                max_new_tokens: 8192,
+            });
+            const stage4Entries = JSON.parse(
+                extractAndCleanJson(stage4Response),
+            );
+            for (const entry of stage4Entries) {
+                await createLorebookEntry(bookName, sanitizeEntry(entry));
+            }
+            updateAutoGenStatus(
+                `第四阶段完成，生成了 ${stage4Entries.length} 个条目`,
+            );
+
+            // 最终成功
+            updateAutoGenStatus('恭喜！全自动生成流程已成功完成！');
+            toastr.success(
+                `世界书 '${bookName}' 已全自动生成完毕！`,
+                '任务完成',
+            );
+            autoGenState.isFinished = true;
+            autoGenState.isRunning = false;
+            renderAutoGenProgress(); // Final render to update button state
+        } catch (error) {
+            const errorMessage = `错误: ${error.message}`;
+            console.error(`[${extensionName}] 自动化生成失败:`, error);
+            toastr.error(errorMessage, '自动化生成失败');
+            updateAutoGenStatus(errorMessage); // This will set isRunning to false
+        }
+    }
+
+    // 自动化生成的启动器
+    function runAutomatedGeneration() {
+        if (autoGenState.isRunning) {
+            toastr.warning('一个自动化任务已经在后台运行。');
+            return;
+        }
+
+        const bookName = $('#autoBookName').val().trim();
+        const coreTheme = $('#autoCoreTheme').val().trim();
+
+        if (!bookName || !coreTheme) {
+            toastr.warning('请同时提供新世界书的名称和核心创作要求！');
+            return;
+        }
+
+        // 重置并初始化状态
+        Object.assign(autoGenState, {
+            isRunning: true,
+            bookName: bookName,
+            coreTheme: coreTheme,
+            progress: [],
+            isFinished: false,
+            error: null,
+        });
+
+        // 更新UI
+        $('#auto-gen-status').show();
+        renderAutoGenProgress();
+
+        // 异步启动后台任务，不阻塞UI
+        doAutomatedGeneration();
     }
 
     async function handleContinue() {
@@ -1143,19 +1453,36 @@ jQuery(async () => {
             if (draggable.wasDragged()) {
                 return;
             }
-            const lastBookName = localStorage.getItem('wbg_lastBookName');
-            if (lastBookName) {
-                $('#quickContinueButton')
-                    .show()
-                    .find('span')
-                    .text(lastBookName);
+
+            // 检查是否有后台任务正在运行或已完成
+            if (
+                autoGenState.isRunning ||
+                (autoGenState.isFinished && autoGenState.progress.length > 0)
+            ) {
+                // 如果有，直接显示自动化页面并渲染进度
+                $('#wbg-landing-page').hide();
+                $('#wbg-generator-page').hide();
+                $('#wbg-auto-generator-page').show();
+                $('#auto-gen-status').show();
+                renderAutoGenProgress();
             } else {
-                $('#quickContinueButton').hide();
+                // 否则，显示正常的欢迎页面
+                const lastBookName = localStorage.getItem('wbg_lastBookName');
+                if (lastBookName) {
+                    $('#quickContinueButton')
+                        .show()
+                        .find('span')
+                        .text(lastBookName);
+                } else {
+                    $('#quickContinueButton').hide();
+                }
+                $('#wbg-generator-page').hide();
+                $('#wbg-auto-generator-page').hide();
+                $('#wbg-landing-page').show();
+                populateBooksDropdown();
             }
-            $('#wbg-generator-page').hide();
-            $('#wbg-landing-page').show();
+
             $('#wbg-popup-overlay').css('display', 'flex');
-            populateBooksDropdown();
         });
 
         // 修正：使用 .wbg-header .close-button 确保只选择页头内的关闭按钮
@@ -1167,8 +1494,12 @@ jQuery(async () => {
 
         // 欢迎页面按钮
         $('#startNewButton').on('click', handleStartNew);
+        $('#startAutoButton').on('click', handleStartAuto);
         $('#continueButton').on('click', handleContinue);
         $('#quickContinueButton').on('click', handleQuickContinue);
+
+        // 自动化页面按钮
+        $('#runAutoGenerationButton').on('click', runAutomatedGeneration);
 
         // 阶段选择器
         $('#wbg-stage-selector').on('click', '.stage-button', function () {

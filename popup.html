@@ -21,13 +21,37 @@
                     <button id="quickContinueButton" class="action-button primary" style="display: none; margin-bottom: 15px;">
                         <i class="fa-solid fa-bolt"></i> 快速继续: <span></span>
                     </button>
-                    <button id="startNewButton" class="action-button primary">创建新世界</button>
+                    <button id="startNewButton" class="action-button primary">创建新世界 (手动版)</button>
+                    <button id="startAutoButton" class="action-button secondary">创建世界书 (自动版)</button>
                     <div class="continue-section">
                         <select id="existingBooksDropdown">
                             <option value="">选择一个已有的世界书...</option>
                         </select>
                         <button id="continueButton" class="action-button">继续上次的工作</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- 自动化生成器页面 (默认隐藏) -->
+            <div id="wbg-auto-generator-page" style="display: none;">
+                <h3>创建世界书 (自动版)</h3>
+                <p>请输入一个核心创作要求，AI将全自动完成后续所有步骤。</p>
+                <div class="input-group">
+                    <label for="autoBookName">新世界书名称:</label>
+                    <input type="text" id="autoBookName" placeholder="为你的自动化世界命名">
+                </div>
+                <div class="input-group">
+                    <label for="autoCoreTheme">核心创作要求:</label>
+                    <textarea id="autoCoreTheme" class="wbg-textarea" rows="4" placeholder="例如：一个融合了赛博朋克与中国神话的都市，名为“九龙机电城”"></textarea>
+                </div>
+                <div class="wbg-button-group">
+                    <button id="runAutoGenerationButton" class="action-button primary">开始全自动生成</button>
+                </div>
+                <div id="auto-gen-status" class="status-container" style="display: none;">
+                    <h4>生成进度:</h4>
+                    <ul id="auto-gen-status-list">
+                        <!-- 状态更新将由JS动态插入此处 -->
+                    </ul>
                 </div>
             </div>
 
