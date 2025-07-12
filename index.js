@@ -6,7 +6,7 @@ jQuery(async () => {
     const extensionName = 'world-book-generator';
     const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
     let tavernHelperApi; // 存储 TavernHelper API
-    const toastr = (/** @type {any} */ (window)).toastr;
+    const toastr = /** @type {any} */ (window).toastr;
 
     // 项目状态管理
     const projectState = {
@@ -258,8 +258,7 @@ jQuery(async () => {
                         );
                     }
                 } else if (manual) {
-                    if (toastr)
-                        toastr.success('您当前使用的是最新版本。');
+                    if (toastr) toastr.success('您当前使用的是最新版本。');
                 }
             } catch (error) {
                 console.error('WBGUpdater: 检查更新失败', error);
@@ -382,13 +381,11 @@ jQuery(async () => {
                 }
             });
 
-            if (toastr)
-                toastr.success(`成功加载了 ${models.length} 个模型。`);
+            if (toastr) toastr.success(`成功加载了 ${models.length} 个模型。`);
             saveSettings(false);
         } catch (error) {
             console.error(`[${extensionName}] 获取模型列表时出错:`, error);
-            if (toastr)
-                toastr.error(`加载模型失败: ${error.message}`);
+            if (toastr) toastr.error(`加载模型失败: ${error.message}`);
             $modelSelect
                 .empty()
                 .append(new Option('加载失败，请检查URL/密钥并重试', ''));
@@ -512,7 +509,6 @@ jQuery(async () => {
         }
     }
 
-
     // -----------------------------------------------------------------
     // 2. SillyTavern API 封装
     // -----------------------------------------------------------------
@@ -632,6 +628,109 @@ jQuery(async () => {
         $('.stage-button').removeClass('active');
         $(`.stage-button[data-stage="${stageNumber}"]`).addClass('active');
     }
+
+    /**
+     * 阶段五：根据世界书内容和用户要求，生成角色卡数据
+     */
+    const handleGenerateCharacter = async () => {
+        const bookName = $('#bookName').val();
+        if (!bookName) {
+            toastr.warning('请先确定世界书名称！');
+            return;
+        }
+        const userPrompt = $('#wbg-char-prompt-input').val();
+        if (!userPrompt) {
+            toastr.warning('请输入角色生成要求！');
+            return;
+        }
+
+        const generateButton = $('#generate-char-button');
+        generateButton.text('正在生成...').prop('disabled', true);
+        $('#create-char-button').prop('disabled', true);
+        $('#wbg-char-output-area').val('AI正在思考...');
+
+        try {
+            const entries = await getLorebookEntries(bookName);
+            const worldBookContent = JSON.stringify(entries, null, 2);
+
+            const unrestrictPrompt = await $.get(
+                `/${extensionFolderPath}/unrestrict-prompt.txt`,
+            );
+            let basePrompt = await $.get(
+                `/${extensionFolderPath}/character-generator-prompt.txt`,
+            );
+
+            // 注意：为手动模式的角色生成添加一个特定的占位符
+            basePrompt = basePrompt
+                .replace('{{world_book_entries}}', worldBookContent)
+                .replace('{{user_prompt}}', userPrompt);
+
+            const finalPrompt = `${unrestrictPrompt}\n\n${basePrompt}`;
+            console.log('手动角色生成最终提示词:', finalPrompt);
+
+            const payload = {
+                ordered_prompts: [{ role: 'user', content: finalPrompt }],
+                max_new_tokens: 2048,
+            };
+
+            const response =
+                settings.aiSource === 'custom'
+                    ? await callCustomApi(payload)
+                    : await tavernHelperApi.generateRaw(payload);
+
+            const characterJsonString = extractAndCleanJson(response);
+
+            if (characterJsonString) {
+                // 尝试解析以确保是有效的JSON
+                const characterData = JSON.parse(characterJsonString);
+                // 格式化后显示在审核区
+                $('#wbg-char-output-area').val(
+                    JSON.stringify(characterData, null, 2),
+                );
+                $('#create-char-button').prop('disabled', false);
+                toastr.success('角色数据生成成功，请审核后创建角色卡。');
+            } else {
+                throw new Error('AI未能返回有效的JSON格式角色数据。');
+            }
+        } catch (error) {
+            console.error('角色数据生成失败:', error);
+            toastr.error(`角色数据生成失败: ${error.message}`);
+            $('#wbg-char-output-area').val(`生成失败: ${error.message}`);
+        } finally {
+            generateButton.text('生成角色数据').prop('disabled', false);
+        }
+    };
+
+    /**
+     * 阶段五：根据审核后的JSON数据，创建角色卡并绑定世界书
+     */
+    const handleCreateCharacter = async () => {
+        const bookName = $('#bookName').val();
+        const characterJsonString = $('#wbg-char-output-area').val();
+
+        if (!characterJsonString) {
+            toastr.error('没有可供创建的角色数据。');
+            return;
+        }
+
+        const createButton = $('#create-char-button');
+        createButton.text('正在创建...').prop('disabled', true);
+
+        try {
+            const characterData = JSON.parse(characterJsonString);
+            // 【强制命名】确保角色卡的名称与世界书名称完全一致
+            characterData.name = bookName;
+
+            // 调用新的、正确的创建函数
+            await createCharacterWithWorldBook(characterData, bookName);
+        } catch (error) {
+            console.error('创建角色卡失败:', error);
+            toastr.error(`创建角色卡失败: ${error.message}`);
+        } finally {
+            // 无论成功失败，都让按钮可以再次点击
+            createButton.text('创建角色卡并绑定').prop('disabled', false);
+        }
+    };
 
     // 新增：使元素可拖动的函数（支持触摸和位置记忆）
     function makeDraggable(element) {
@@ -757,8 +856,7 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        if (toastr)
-            toastr.info('已为所有高级设定随机选择完毕！');
+        if (toastr) toastr.info('已为所有高级设定随机选择完毕！');
     }
 
     function populatePlotOptions(channel = 'male') {
@@ -792,8 +890,7 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        if (toastr)
-            toastr.info('已为当前频道的剧情设定随机选择完毕！');
+        if (toastr) toastr.info('已为当前频道的剧情设定随机选择完毕！');
     }
 
     function populateDetailOptions() {
@@ -822,8 +919,7 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        if (toastr)
-            toastr.info('已为所有细节深化选项随机选择完毕！');
+        if (toastr) toastr.info('已为所有细节深化选项随机选择完毕！');
     }
 
     function populateMechanicsOptions() {
@@ -854,8 +950,7 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        if (toastr)
-            toastr.info('已为所有游戏机制选项随机选择完毕！');
+        if (toastr) toastr.info('已为所有游戏机制选项随机选择完毕！');
     }
 
     // -----------------------------------------------------------------
@@ -864,8 +959,7 @@ jQuery(async () => {
     async function handleGenerateFoundation() {
         const bookName = String($('#bookName').val()).trim();
         if (!bookName) {
-            if (toastr)
-                toastr.warning('在开始前，请为你的世界命名！');
+            if (toastr) toastr.warning('在开始前，请为你的世界命名！');
             return;
         }
         projectState.bookName = bookName;
@@ -1393,7 +1487,9 @@ jQuery(async () => {
             $('#runAutoGenerationButton')
                 .prop('disabled', true)
                 .text('正在全速生成中...');
-            $('#autoBookName').val(autoGenState.bookName).prop('disabled', true);
+            $('#autoBookName')
+                .val(autoGenState.bookName)
+                .prop('disabled', true);
             $('#autoCoreTheme')
                 .val(autoGenState.coreTheme)
                 .prop('disabled', true);
@@ -1500,9 +1596,7 @@ jQuery(async () => {
                     !parsedInstructions.stage1_instruction ||
                     !Array.isArray(parsedInstructions.stage1_instruction)
                 ) {
-                    throw new Error(
-                        'AI未返回有效的指令数组结构。',
-                    );
+                    throw new Error('AI未返回有效的指令数组结构。');
                 }
                 return parsedInstructions;
             };
@@ -1590,7 +1684,8 @@ jQuery(async () => {
                     // 定义要重试的完整任务：获取上下文、构建提示、调用AI、解析结果
                     const generationTask = async () => {
                         // 1. 获取最新上下文
-                        const currentEntries = await getLorebookEntries(bookName);
+                        const currentEntries =
+                            await getLorebookEntries(bookName);
                         // 2. 构建完整提示词
                         const finalPrompt = stage.promptReplacer(
                             basePrompt + stageTemplate,
@@ -1637,6 +1732,20 @@ jQuery(async () => {
                 `世界书 '${bookName}' 已全自动生成完毕！`,
                 '任务完成',
             );
+
+            // 新增：自动创建并绑定配套的角色卡
+            updateAutoGenStatus('🤖 开始自动生成配套的“导演”角色卡...');
+            try {
+                await generateAndBindCharacter(autoGenState.bookName);
+                updateAutoGenStatus('✅ 配套角色卡创建并绑定成功！', 'success');
+            } catch (error) {
+                console.error('配套角色卡创建失败:', error);
+                updateAutoGenStatus(
+                    `❌ 配套角色卡创建失败: ${error.message}`,
+                    'error',
+                );
+            }
+
             autoGenState.isFinished = true;
             autoGenState.isRunning = false;
             renderAutoGenProgress(); // Final render to update button state
@@ -1648,7 +1757,9 @@ jQuery(async () => {
         } finally {
             // 无论成功或失败，任务结束后都显示完成按钮
             /** @type {HTMLElement | null} */
-            const finishedButtons = document.querySelector('#wbg-autogen-finished-buttons');
+            const finishedButtons = document.querySelector(
+                '#wbg-autogen-finished-buttons',
+            );
             if (finishedButtons) {
                 finishedButtons.style.display = 'flex';
             }
@@ -1689,13 +1800,215 @@ jQuery(async () => {
             error: null,
         });
 
-
         // 更新UI
         $('#auto-gen-status').show();
         renderAutoGenProgress();
 
         // 异步启动后台任务，不阻塞UI
         doAutomatedGeneration();
+    }
+
+    /**
+     * 【新增功能】根据世界书内容，自动生成并绑定一个“导演”角色卡。
+     * @param {string} bookName - 刚刚创建的世界书的名称。
+     */
+    /**
+     * 【v22.1.0 核心功能】
+     * 为新创建的角色更新全局标签索引 (tags 和 tag_map)。
+     * 这确保了通过插件添加的标签能被SillyTavern的UI正确识别和筛选。
+     * @param {string} characterId - 新角色的头像文件名 (e.g., 'char_12345.png')
+     * @param {string} tagsString - 从角色数据中获取的、以逗号分隔的标签字符串
+     */
+    async function updateGlobalTagMapForCharacter(characterId, tagsString) {
+        if (!tagsString || typeof tagsString !== 'string') {
+            return; // 没有标签需要处理
+        }
+
+        const { tags, tag_map, saveSettingsDebounced } =
+            SillyTavern.getContext();
+        if (!tags || !tag_map || !saveSettingsDebounced) {
+            console.warn(
+                '[插件] 无法获取全局标签系统 (tags, tag_map)，跳过标签更新。',
+            );
+            return;
+        }
+
+        const characterTags = tagsString
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean);
+        const characterTagIds = [];
+
+        characterTags.forEach((tagName) => {
+            let tagObject = tags.find((t) => t.name === tagName);
+            if (!tagObject) {
+                // 标签不存在，创建一个新的
+                const newId = Date.now() + Math.random(); // 确保ID唯一
+                tagObject = {
+                    id: newId,
+                    name: tagName,
+                    color: null, // 或者一个随机颜色
+                };
+                tags.push(tagObject);
+                console.log(`[插件] 创建了新标签: "${tagName}"`);
+            }
+            characterTagIds.push(tagObject.id);
+        });
+
+        // 更新 tag_map
+        tag_map[characterId] = characterTagIds;
+
+        // 保存设置
+        saveSettingsDebounced();
+        console.log(
+            `[插件] 已为角色 ${characterId} 更新了 ${characterTagIds.length} 个标签的全局索引。`,
+        );
+        toastr.info(`成功为新角色更新了 ${characterTagIds.length} 个标签。`);
+    }
+
+    async function generateAndBindCharacter(bookName) {
+        // 1. 获取世界书内容作为上下文
+        const entries = await tavernHelperApi.getLorebookEntries(bookName);
+        const context = JSON.stringify(entries, null, 2);
+
+        // 2. 加载角色生成提示词
+        const [unrestrictPrompt, charPromptTemplate] = await Promise.all([
+            $.get(`${extensionFolderPath}/unrestrict-prompt.txt`),
+            $.get(`${extensionFolderPath}/character-generator-prompt.txt`),
+        ]);
+        const charPrompt = charPromptTemplate
+            .replace('{{world_book_entries}}', context)
+            .replace(
+                '{{user_prompt}}',
+                '请根据世界书内容，生成一个合适的导演角色。',
+            ); // 修正：为自动生成添加默认的用户要求
+        const finalPrompt = `${unrestrictPrompt}\n\n${charPrompt}`;
+
+        // 3. 调用AI生成角色JSON
+        updateAutoGenStatus('🧠 正在调用AI生成角色设定...');
+        const payload = {
+            ordered_prompts: [{ role: 'user', content: finalPrompt }],
+            max_new_tokens: 2048, // 角色卡生成不需要太大
+        };
+
+        const aiResponse =
+            settings.aiSource === 'custom'
+                ? await callCustomApi(payload)
+                : await tavernHelperApi.generateRaw(payload);
+
+        const characterJson = extractAndCleanJson(aiResponse);
+
+        if (!characterJson) {
+            throw new Error('AI未能返回有效的角色JSON数据。');
+        }
+
+        const characterData = JSON.parse(characterJson);
+        // 【强制命名】确保角色卡的名称与世界书名称完全一致
+        characterData.name = bookName;
+        updateAutoGenStatus(`👍 AI已生成角色: ${characterData.name}`);
+
+        // 4. 【架构重构】通过新的API创建角色
+        await createCharacterWithWorldBook(characterData, bookName);
+    }
+
+    /**
+     * 【完整函数】从插件内部以编程方式创建角色卡，并绑定一个指定的世界书。
+     * @param {object} charData - 包含角色所有信息的对象（如name, description等）。
+     * @param {string} worldBookName - 要绑定的世界书的确切名称。传空字符串或null则不绑定。
+     * @param {File} [avatarFile] - (可选) 角色的头像文件对象。
+     */
+    async function createCharacterWithWorldBook(
+        charData,
+        worldBookName,
+        avatarFile = null,
+    ) {
+        // --- 1. 准备 FormData ---
+        console.log(
+            `正在创建角色 "${charData.name}" 并绑定世界书 "${worldBookName}"...`,
+        );
+        const formData = new FormData();
+
+        // 填充所有字段
+        formData.append('ch_name', charData.name || '未命名角色');
+        formData.append('description', charData.description || '');
+        formData.append('first_mes', charData.first_message || ''); // v22.1.1 修复
+        formData.append('personality', charData.personality || '');
+        formData.append('scenario', charData.scenario || '');
+        formData.append('creator_notes', charData.creator_notes || '');
+        formData.append('system_prompt', charData.system_prompt || '');
+        formData.append(
+            'post_history_instructions',
+            charData.post_history_instructions || '',
+        );
+        formData.append('fav', String(charData.is_favorite || false));
+        formData.append('tags', charData.tags || ''); // v22.0.0 新增
+
+        // 绑定世界书
+        if (worldBookName) {
+            formData.append('world', worldBookName);
+        }
+
+        // 添加头像
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
+        }
+
+        // --- 2. 提交数据到服务器 ---
+        const { getRequestHeaders } = SillyTavern.getContext();
+        const headers = getRequestHeaders();
+        delete headers['Content-Type'];
+
+        let newAvatarId = null;
+        try {
+            const response = await fetch('/api/characters/create', {
+                method: 'POST',
+                headers: headers,
+                body: formData,
+                cache: 'no-cache',
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`服务器错误: ${response.status} ${errorText}`);
+            }
+
+            newAvatarId = await response.text();
+            toastr.success(`角色 "${formData.get('ch_name')}" 创建成功！`);
+
+            // --- 3. 更新标签和UI ---
+            if (newAvatarId) {
+                // 3.1 更新标签全局索引 (v22.1.0 修复)
+                if (charData.tags) {
+                    await updateGlobalTagMapForCharacter(
+                        newAvatarId,
+                        charData.tags,
+                    );
+                }
+
+                // 3.2 刷新UI并选中新角色 (v22.1.2 修复)
+                const context = SillyTavern.getContext();
+                if (
+                    context &&
+                    typeof context.reloadCharacterList === 'function' &&
+                    typeof context.selectCharacter === 'function'
+                ) {
+                    await context.reloadCharacterList();
+                    context.selectCharacter(newAvatarId);
+                    toastr.info('UI已刷新，新角色卡已选中。');
+                } else {
+                    console.warn(
+                        '[插件] UI刷新函数 (reloadCharacterList/selectCharacter) 不可用，跳过自动刷新。',
+                    );
+                    toastr.warning(
+                        '角色已创建，但UI自动刷新失败。请手动刷新角色列表查看。',
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('角色创建请求失败:', error);
+            toastr.error('角色创建失败，请查看控制台日志。');
+            // 出错时依然返回，避免阻塞
+        }
     }
 
     async function handleContinue() {
@@ -1755,25 +2068,34 @@ jQuery(async () => {
     }
 
     async function initializeExtension() {
+        console.log(`[${extensionName}] 1. 开始初始化...`);
         $('head').append(
             `<link rel="stylesheet" type="text/css" href="${extensionFolderPath}/style.css?v=${Date.now()}">`,
         );
         try {
-            // 在加载任何UI之前，首先加载所有外部数据
+            console.log(`[${extensionName}] 2. 准备加载外部数据池...`);
             await loadAllDataPools();
+            console.log(`[${extensionName}] 3. 外部数据池加载成功。`);
 
+            console.log(`[${extensionName}] 4. 准备加载HTML模板...`);
             const [settingsHtml, popupHtml] = await Promise.all([
                 $.get(`${extensionFolderPath}/settings.html`),
                 $.get(`${extensionFolderPath}/popup.html?v=${Date.now()}`),
             ]);
+            console.log(`[${extensionName}] 5. HTML模板加载成功。`);
+
             $('#extensions_settings2').append(settingsHtml);
             $('body').append(popupHtml);
+            console.log(`[${extensionName}] 6. HTML已注入页面。`);
 
             // 在HTML加载后，初始化更新器
+            console.log(`[${extensionName}] 7. 准备初始化更新检查器...`);
             const updater = new WBGUpdater();
             await updater.init();
+            console.log(`[${extensionName}] 8. 更新检查器初始化成功。`);
 
             // 新增：加载API设置并绑定事件
+            console.log(`[${extensionName}] 9. 准备加载API设置...`);
             loadSettings();
             $('#wbg-ai-source').on('change', () => {
                 toggleCustomApiSettings();
@@ -1784,13 +2106,22 @@ jQuery(async () => {
             $('#wbg-api-model').on('change', () => saveSettings(false));
             $('#wbg-save-api').on('click', () => saveSettings(true));
             $('#wbg-fetch-models').on('click', fetchApiModels);
-
+            console.log(`[${extensionName}] 10. API设置加载并绑定事件成功。`);
         } catch (error) {
+            // 使用 console.error 打印完整的错误对象，而不仅仅是 error.message
             console.error(
-                `[${extensionName}] Failed to load HTML files.`,
+                `[${extensionName}] 初始化过程中断！错误详情:`,
                 error,
             );
-            return;
+            // 确保即使初始化失败，用户也能在UI上看到提示
+            if (toastr) {
+                toastr.error(
+                    `[${extensionName}] 初始化失败，请按F12查看控制台获取详细错误信息。`,
+                    '插件错误',
+                    { timeOut: 0 },
+                );
+            }
+            return; // 中断执行
         }
 
         $('body').append(
@@ -1924,6 +2255,10 @@ jQuery(async () => {
         );
         $('#generateMechanicsButton').on('click', handleGenerateMechanics);
         $('#uploadMechanicsButton').on('click', handleUploadMechanics);
+
+        // 阶段五按钮
+        $('#generate-char-button').on('click', handleGenerateCharacter);
+        $('#create-char-button').on('click', handleCreateCharacter);
 
         // 初始化高级选项
         populateAdvancedOptions();

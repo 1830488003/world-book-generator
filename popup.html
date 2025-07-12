@@ -93,6 +93,7 @@
                     <button class="stage-button" data-stage="2">阶段二: 剧情</button>
                     <button class="stage-button" data-stage="3">阶段三: 细节</button>
                     <button class="stage-button" data-stage="4">阶段四: 机制</button>
+                    <button class="stage-button" data-stage="5">阶段五: 角色卡</button>
                 </div>
 
         <!-- 阶段一：世界基石 -->
@@ -200,6 +201,27 @@
                     <div class="wbg-button-group">
                         <button id="generateMechanicsButton" class="action-button primary">设计/补充机制</button>
                         <button id="uploadMechanicsButton" class="action-button" disabled>上传至世界书</button>
+                    </div>
+                </div>
+
+                <!-- 阶段五：角色卡生成 -->
+                <div id="stage-5" class="wbg-stage">
+                    <h3>阶段五: 生成配套角色卡</h3>
+                    <p class="wbg-desc">根据当前世界书的全部内容，为AI提供额外要求，生成一个或多个配套角色卡。</p>
+
+                    <div class="input-group">
+                        <label for="wbg-char-prompt-input">角色生成要求 (例如: "生成一个适合引导玩家的神秘向导NPC"):</label>
+                        <textarea id="wbg-char-prompt-input" class="wbg-textarea" rows="3"></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="wbg-char-output-area">AI生成的角色数据 (JSON格式 / 审核):</label>
+                        <textarea id="wbg-char-output-area" class="wbg-textarea" rows="10" readonly></textarea>
+                    </div>
+
+                    <div class="wbg-button-group">
+                        <button id="generate-char-button" class="action-button primary">生成角色数据</button>
+                        <button id="create-char-button" class="action-button" disabled>创建角色卡并绑定</button>
                     </div>
                 </div>
             </div>
