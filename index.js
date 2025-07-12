@@ -6,6 +6,7 @@ jQuery(async () => {
     const extensionName = 'world-book-generator';
     const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
     let tavernHelperApi; // 存储 TavernHelper API
+    const toastr = (/** @type {any} */ (window)).toastr;
 
     // 项目状态管理
     const projectState = {
@@ -39,29 +40,19 @@ jQuery(async () => {
             stageCounts: undefined,
         });
 
-        // Clear the UI
-        const statusList = document.querySelector('#auto-gen-status-list');
-        if (statusList) statusList.innerHTML = '';
-        const statusContainer = document.querySelector('#auto-gen-status');
-        if (statusContainer) statusContainer.style.display = 'none';
-        const finishedButtons = document.querySelector('#wbg-autogen-finished-buttons');
-        if (finishedButtons) finishedButtons.style.display = 'none';
-        const runButton = document.querySelector('#runAutoGenerationButton');
-        if (runButton) runButton.disabled = false;
+        // Clear the UI using jQuery for consistency
+        $('#auto-gen-status-list').empty();
+        $('#auto-gen-status').hide();
+        $('#wbg-autogen-finished-buttons').hide();
+        $('#runAutoGenerationButton').prop('disabled', false);
 
-        // Reset input fields
-        const autoBookName = document.querySelector('#autoBookName');
-        if (autoBookName) autoBookName.value = '';
-        const autoCoreTheme = document.querySelector('#autoCoreTheme');
-        if (autoCoreTheme) autoCoreTheme.value = '';
-        const stage1Count = document.querySelector('#stage1Count');
-        if (stage1Count) stage1Count.value = 1;
-        const stage2Count = document.querySelector('#stage2Count');
-        if (stage2Count) stage2Count.value = 1;
-        const stage3Count = document.querySelector('#stage3Count');
-        if (stage3Count) stage3Count.value = 1;
-        const stage4Count = document.querySelector('#stage4Count');
-        if (stage4Count) stage4Count.value = 1;
+        // Reset input fields using jQuery
+        $('#autoBookName').val('');
+        $('#autoCoreTheme').val('');
+        $('#stage1Count').val('1');
+        $('#stage2Count').val('1');
+        $('#stage3Count').val('1');
+        $('#stage4Count').val('1');
     };
 
     // 用于存储从外部JSON文件加载的数据的全局变量
@@ -119,7 +110,7 @@ jQuery(async () => {
             console.log('世界书生成器：所有数据池已成功加载。');
         } catch (error) {
             console.error('世界书生成器：加载数据池失败！', error);
-            if (window.toastr) {
+            if (toastr) {
                 toastr.error(
                     '加载核心数据失败，请检查控制台获取更多信息。',
                     '错误',
@@ -185,20 +176,13 @@ jQuery(async () => {
                 );
                 const manifest = await response.json();
                 this.currentVersion = manifest.version;
-                // 修正：直接使用获取到的元素，而不是依赖 this.elements
-                const versionDisplay = document.getElementById(
-                    'wbg-current-version',
-                );
-                if (versionDisplay) {
-                    versionDisplay.textContent = `v${this.currentVersion}`;
+                if (this.elements.versionDisplay) {
+                    this.elements.versionDisplay.textContent = `v${this.currentVersion}`;
                 }
             } catch (error) {
                 console.error('WBGUpdater: 加载 manifest.json 失败', error);
-                const versionDisplay = document.getElementById(
-                    'wbg-current-version',
-                );
-                if (versionDisplay) {
-                    versionDisplay.textContent = 'v?.?.?';
+                if (this.elements.versionDisplay) {
+                    this.elements.versionDisplay.textContent = 'v?.?.?';
                 }
             }
         }
@@ -210,10 +194,14 @@ jQuery(async () => {
             this.elements.autoUpdateToggle.addEventListener('change', (e) => {
                 localStorage.setItem(this.storageKey, e.target.checked);
                 if (e.target.checked) {
-                    toastr.success('已开启自动更新检查。');
+                    if (toastr) {
+                        toastr.success('已开启自动更新检查。');
+                    }
                     this.checkForUpdates(false);
                 } else {
-                    toastr.info('已关闭自动更新检查。');
+                    if (toastr) {
+                        toastr.info('已关闭自动更新检查。');
+                    }
                 }
             });
         }
@@ -226,7 +214,7 @@ jQuery(async () => {
 
         async checkForUpdates(manual = false) {
             if (manual) {
-                toastr.info('正在检查更新...');
+                if (toastr) toastr.info('正在检查更新...');
                 this.elements.checkButton.disabled = true;
                 this.elements.checkButton.innerHTML =
                     '<i class="fas fa-spinner fa-spin"></i> 检查中...';
@@ -257,24 +245,30 @@ jQuery(async () => {
                     ) > 0
                 ) {
                     const releaseUrl = `https://github.com/${this.owner}/${this.repo}/`;
-                    toastr.success(
-                        `发现新版本 v${this.latestVersion}！点击这里前往Github仓库页面。`,
-                        '更新提示',
-                        {
-                            onclick: () => window.open(releaseUrl, '_blank'),
-                            timeOut: 0, // 永不自动消失
-                            extendedTimeOut: 0, // 鼠标悬停时也永不消失
-                        },
-                    );
+                    if (toastr) {
+                        toastr.success(
+                            `发现新版本 v${this.latestVersion}！点击这里前往Github仓库页面。`,
+                            '更新提示',
+                            {
+                                onclick: () =>
+                                    window.open(releaseUrl, '_blank'),
+                                timeOut: 0, // 永不自动消失
+                                extendedTimeOut: 0, // 鼠标悬停时也永不消失
+                            },
+                        );
+                    }
                 } else if (manual) {
-                    toastr.success('您当前使用的是最新版本。');
+                    if (toastr)
+                        toastr.success('您当前使用的是最新版本。');
                 }
             } catch (error) {
                 console.error('WBGUpdater: 检查更新失败', error);
                 if (manual) {
-                    toastr.error(
-                        `检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`,
-                    );
+                    if (toastr) {
+                        toastr.error(
+                            `检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`,
+                        );
+                    }
                 }
             } finally {
                 if (manual) {
@@ -325,18 +319,18 @@ jQuery(async () => {
      * 从自定义API端点获取并填充模型列表
      */
     async function fetchApiModels() {
-        const apiUrl = $('#wbg-api-url').val().trim();
-        const apiKey = $('#wbg-api-key').val().trim();
+        const apiUrl = String($('#wbg-api-url').val()).trim();
+        const apiKey = String($('#wbg-api-key').val()).trim();
         const $modelSelect = $('#wbg-api-model');
         const $fetchButton = $('#wbg-fetch-models');
 
         if (!apiUrl) {
-            toastr.warning('请输入API基础URL。');
+            if (toastr) toastr.warning('请输入API基础URL。');
             return;
         }
 
         $fetchButton.prop('disabled', true).addClass('fa-spin');
-        toastr.info('正在从API加载模型列表...');
+        if (toastr) toastr.info('正在从API加载模型列表...');
 
         try {
             let modelsUrl = apiUrl;
@@ -388,11 +382,13 @@ jQuery(async () => {
                 }
             });
 
-            toastr.success(`成功加载了 ${models.length} 个模型。`);
+            if (toastr)
+                toastr.success(`成功加载了 ${models.length} 个模型。`);
             saveSettings(false);
         } catch (error) {
             console.error(`[${extensionName}] 获取模型列表时出错:`, error);
-            toastr.error(`加载模型失败: ${error.message}`);
+            if (toastr)
+                toastr.error(`加载模型失败: ${error.message}`);
             $modelSelect
                 .empty()
                 .append(new Option('加载失败，请检查URL/密钥并重试', ''));
@@ -464,14 +460,15 @@ jQuery(async () => {
      * 加载插件设置。
      */
     function loadSettings() {
-        if (!SillyTavern.getContext().extensionSettings[extensionName]) {
-            SillyTavern.getContext().extensionSettings[extensionName] = {};
+        const context = SillyTavern.getContext();
+        if (!context.extensionSettings[extensionName]) {
+            context.extensionSettings[extensionName] = {};
         }
 
         settings = Object.assign(
             {},
             defaultSettings,
-            SillyTavern.getContext().extensionSettings[extensionName],
+            context.extensionSettings[extensionName],
         );
 
         // 更新设置UI
@@ -506,11 +503,12 @@ jQuery(async () => {
         settings.apiKey = $('#wbg-api-key').val();
         settings.apiModel = $('#wbg-api-model').val();
 
-        SillyTavern.getContext().extensionSettings[extensionName] = settings;
-        SillyTavern.getContext().saveSettingsDebounced();
+        const context = SillyTavern.getContext();
+        context.extensionSettings[extensionName] = settings;
+        context.saveSettingsDebounced();
 
         if (showToast) {
-            toastr.success('API设置已保存！');
+            if (toastr) toastr.success('API设置已保存！');
         }
     }
 
@@ -525,7 +523,7 @@ jQuery(async () => {
             if (
                 window.TavernHelper &&
                 typeof window.TavernHelper.getLorebooks === 'function' &&
-                window.toastr
+                toastr
             ) {
                 console.log(
                     `[${extensionName}] TavernHelper API and Toastr are available.`,
@@ -635,82 +633,95 @@ jQuery(async () => {
         $(`.stage-button[data-stage="${stageNumber}"]`).addClass('active');
     }
 
-    // 新增：使元素可拖动的函数
+    // 新增：使元素可拖动的函数（支持触摸和位置记忆）
     function makeDraggable(element) {
+        // element is a jQuery object
         let isDragging = false;
         let offsetX, offsetY;
-        // 用于区分点击和拖拽的标志
-        // mousedown后，如果mousemove移动了超过一个阈值，就判定为拖拽
         let dragThreshold = 5;
         let startX, startY;
 
-        element.on('mousedown', function (e) {
-            isDragging = false; // 重置拖拽状态
-            startX = e.clientX;
-            startY = e.clientY;
+        const dragStart = (e) => {
+            e.preventDefault();
+            isDragging = false;
+            const touch =
+                e.type === 'touchstart' ? e.originalEvent.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
 
+            const domElement = element[0];
             // 确保使用的是 left/top 定位
-            if (!this.style.left || !this.style.top) {
-                const rect = this.getBoundingClientRect();
-                this.style.left = `${rect.left}px`;
-                this.style.top = `${rect.top}px`;
-                this.style.right = ''; // 清除 right/bottom
-                this.style.bottom = '';
+            if (!domElement.style.left || !domElement.style.top) {
+                const rect = domElement.getBoundingClientRect();
+                domElement.style.left = `${rect.left}px`;
+                domElement.style.top = `${rect.top}px`;
+                domElement.style.right = ''; // 清除 right/bottom
+                domElement.style.bottom = '';
             }
 
-            offsetX = e.clientX - this.getBoundingClientRect().left;
-            offsetY = e.clientY - this.getBoundingClientRect().top;
+            offsetX = touch.clientX - domElement.getBoundingClientRect().left;
+            offsetY = touch.clientY - domElement.getBoundingClientRect().top;
 
-            // 绑定移动和松开事件到 document
-            $(document).on('mousemove.wbg-drag', function (moveEvent) {
-                // 检查是否超过拖拽阈值
-                if (
-                    !isDragging &&
-                    (Math.abs(moveEvent.clientX - startX) > dragThreshold ||
-                        Math.abs(moveEvent.clientY - startY) > dragThreshold)
-                ) {
-                    isDragging = true;
-                    element.css('cursor', 'grabbing');
-                }
+            $(document).on('mousemove.wbg-drag touchmove.wbg-drag', dragMove);
+            $(document).on('mouseup.wbg-drag touchend.wbg-drag', dragEnd);
+        };
 
-                if (isDragging) {
-                    let newX = moveEvent.clientX - offsetX;
-                    let newY = moveEvent.clientY - offsetY;
+        const dragMove = (e) => {
+            const touch =
+                e.type === 'touchmove' ? e.originalEvent.touches[0] : e;
+            if (
+                !isDragging &&
+                (Math.abs(touch.clientX - startX) > dragThreshold ||
+                    Math.abs(touch.clientY - startY) > dragThreshold)
+            ) {
+                isDragging = true;
+                element.css('cursor', 'grabbing');
+            }
 
-                    // 限制在视窗内移动
-                    const viewportWidth = $(window).width();
-                    const viewportHeight = $(window).height();
-                    const elementWidth = element.outerWidth();
-                    const elementHeight = element.outerHeight();
+            if (isDragging) {
+                let newX = touch.clientX - offsetX;
+                let newY = touch.clientY - offsetY;
 
-                    newX = Math.max(
-                        0,
-                        Math.min(newX, viewportWidth - elementWidth),
-                    );
-                    newY = Math.max(
-                        0,
-                        Math.min(newY, viewportHeight - elementHeight),
-                    );
+                const viewportWidth = $(window).width();
+                const viewportHeight = $(window).height();
+                const elementWidth = element.outerWidth();
+                const elementHeight = element.outerHeight();
 
-                    element.css({
-                        top: newY + 'px',
-                        left: newX + 'px',
-                    });
-                }
-            });
+                newX = Math.max(
+                    0,
+                    Math.min(newX, viewportWidth - elementWidth),
+                );
+                newY = Math.max(
+                    0,
+                    Math.min(newY, viewportHeight - elementHeight),
+                );
 
-            $(document).on('mouseup.wbg-drag', function () {
-                // 解绑事件
-                $(document).off('mousemove.wbg-drag');
-                $(document).off('mouseup.wbg-drag');
-                if (isDragging) {
-                    element.css('cursor', 'grab');
-                }
-            });
+                element.css({
+                    top: newY + 'px',
+                    left: newX + 'px',
+                });
+            }
+        };
 
-            // 阻止默认行为，如文本选择
-            e.preventDefault();
-        });
+        const dragEnd = () => {
+            $(document).off('mousemove.wbg-drag touchmove.wbg-drag');
+            $(document).off('mouseup.wbg-drag touchend.wbg-drag');
+
+            if (isDragging) {
+                element.css('cursor', 'grab');
+                // 保存位置到 localStorage
+                const finalPosition = {
+                    top: element.css('top'),
+                    left: element.css('left'),
+                };
+                localStorage.setItem(
+                    'wbg_button_position',
+                    JSON.stringify(finalPosition),
+                );
+            }
+        };
+
+        element.on('mousedown touchstart', dragStart);
 
         // 返回一个函数，用于在 click 事件中检查是否发生了拖拽
         return {
@@ -746,7 +757,8 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        toastr.info('已为所有高级设定随机选择完毕！');
+        if (toastr)
+            toastr.info('已为所有高级设定随机选择完毕！');
     }
 
     function populatePlotOptions(channel = 'male') {
@@ -780,7 +792,8 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        toastr.info('已为当前频道的剧情设定随机选择完毕！');
+        if (toastr)
+            toastr.info('已为当前频道的剧情设定随机选择完毕！');
     }
 
     function populateDetailOptions() {
@@ -809,7 +822,8 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        toastr.info('已为所有细节深化选项随机选择完毕！');
+        if (toastr)
+            toastr.info('已为所有细节深化选项随机选择完毕！');
     }
 
     function populateMechanicsOptions() {
@@ -840,22 +854,24 @@ jQuery(async () => {
                 Math.floor(Math.random() * (options.length - 1)) + 1;
             $(this).prop('selectedIndex', randomIndex);
         });
-        toastr.info('已为所有游戏机制选项随机选择完毕！');
+        if (toastr)
+            toastr.info('已为所有游戏机制选项随机选择完毕！');
     }
 
     // -----------------------------------------------------------------
     // 4. 核心逻辑
     // -----------------------------------------------------------------
     async function handleGenerateFoundation() {
-        const bookName = $('#bookName').val().trim();
+        const bookName = String($('#bookName').val()).trim();
         if (!bookName) {
-            toastr.warning('在开始前，请为你的世界命名！');
+            if (toastr)
+                toastr.warning('在开始前，请为你的世界命名！');
             return;
         }
         projectState.bookName = bookName;
         localStorage.setItem('wbg_lastBookName', bookName);
 
-        const coreTheme = $('#coreTheme').val().trim();
+        const coreTheme = String($('#coreTheme').val()).trim();
         let advancedOptionsString = '';
         $('#advanced-options-content select').each(function () {
             const selectedValue = $(this).val();
@@ -963,7 +979,7 @@ jQuery(async () => {
             return;
         }
 
-        const plotElements = $('#plotElements').val().trim();
+        const plotElements = String($('#plotElements').val()).trim();
         let plotOptionsString = '';
         $('#plot-options-content select').each(function () {
             const selectedValue = $(this).val();
@@ -1074,7 +1090,7 @@ jQuery(async () => {
             return;
         }
 
-        const detailElements = $('#detailElements').val().trim();
+        const detailElements = String($('#detailElements').val()).trim();
         let detailOptionsString = '';
         $('#detail-options-content select').each(function () {
             const selectedValue = $(this).val();
@@ -1187,7 +1203,7 @@ jQuery(async () => {
             return;
         }
 
-        const mechanicsElements = $('#mechanicsElements').val().trim();
+        const mechanicsElements = String($('#mechanicsElements').val()).trim();
         let mechanicsOptionsString = '';
         $('#mechanics-options-content select').each(function () {
             const selectedValue = $(this).val();
@@ -1313,7 +1329,9 @@ jQuery(async () => {
                 `[${extensionName}] Failed to populate lorebooks dropdown:`,
                 error,
             );
-            toastr.error('无法加载世界书列表。');
+            if (toastr) {
+                toastr.error('无法加载世界书列表。');
+            }
         }
     }
 
@@ -1333,19 +1351,7 @@ jQuery(async () => {
     function handleStartAuto() {
         // 如果上次的任务已完成，重置状态以开始新任务
         if (autoGenState.isFinished) {
-            Object.assign(autoGenState, {
-                isRunning: false,
-                bookName: '',
-                coreTheme: '',
-                progress: [],
-                isFinished: false,
-                error: null,
-            });
-            // 清理UI
-            $('#autoBookName').val('').prop('disabled', false);
-            $('#autoCoreTheme').val('').prop('disabled', false);
-            $('#auto-gen-status-list').empty();
-            $('#auto-gen-status').hide();
+            resetAutoGenState();
         }
 
         $('#wbg-landing-page').hide();
@@ -1641,6 +1647,7 @@ jQuery(async () => {
             updateAutoGenStatus(errorMessage); // This will set isRunning to false
         } finally {
             // 无论成功或失败，任务结束后都显示完成按钮
+            /** @type {HTMLElement | null} */
             const finishedButtons = document.querySelector('#wbg-autogen-finished-buttons');
             if (finishedButtons) {
                 finishedButtons.style.display = 'flex';
@@ -1655,8 +1662,8 @@ jQuery(async () => {
             return;
         }
 
-        const bookName = $('#autoBookName').val().trim();
-        const coreTheme = $('#autoCoreTheme').val().trim();
+        const bookName = String($('#autoBookName').val()).trim();
+        const coreTheme = String($('#autoCoreTheme').val()).trim();
 
         if (!bookName || !coreTheme) {
             toastr.warning('请同时提供新世界书的名称和核心创作要求！');
@@ -1665,10 +1672,10 @@ jQuery(async () => {
 
         // 新增：读取各阶段执行次数
         const stageCounts = {
-            stage1: parseInt($('#stage1Count').val(), 10) || 1,
-            stage2: parseInt($('#stage2Count').val(), 10) || 1,
-            stage3: parseInt($('#stage3Count').val(), 10) || 1,
-            stage4: parseInt($('#stage4Count').val(), 10) || 1,
+            stage1: parseInt(String($('#stage1Count').val()), 10) || 1,
+            stage2: parseInt(String($('#stage2Count').val()), 10) || 1,
+            stage3: parseInt(String($('#stage3Count').val()), 10) || 1,
+            stage4: parseInt(String($('#stage4Count').val()), 10) || 1,
         };
 
         // 重置并初始化状态
@@ -1692,7 +1699,7 @@ jQuery(async () => {
     }
 
     async function handleContinue() {
-        const selectedBook = $('#existingBooksDropdown').val();
+        const selectedBook = String($('#existingBooksDropdown').val());
         if (!selectedBook) {
             toastr.warning('请先选择一个世界书！');
             return;
@@ -1730,7 +1737,7 @@ jQuery(async () => {
             await getLorebookEntries(lastBookName);
             const stage = 4; // 默认可以编辑所有阶段
             projectState.bookName = lastBookName;
-            $('#bookName').val(lastBookName).prop('disabled', true);
+            $('#bookName').val(String(lastBookName)).prop('disabled', true);
             $('#wbg-landing-page').hide();
             $('#wbg-generator-page').show();
             setActiveStage(stage);
@@ -1791,6 +1798,24 @@ jQuery(async () => {
         );
 
         const fab = $('#wbg-floating-button');
+
+        // 加载按钮位置
+        const savedPosition = localStorage.getItem('wbg_button_position');
+        if (savedPosition) {
+            try {
+                const pos = JSON.parse(savedPosition);
+                fab.css({
+                    top: pos.top,
+                    left: pos.left,
+                    right: 'auto',
+                    bottom: 'auto',
+                });
+            } catch (e) {
+                console.error('世界书生成器：解析已保存的按钮位置失败', e);
+                localStorage.removeItem('wbg_button_position');
+            }
+        }
+
         const draggable = makeDraggable(fab);
 
         fab.on('click', () => {
@@ -1914,6 +1939,12 @@ jQuery(async () => {
         console.log(`[${extensionName}] 扩展已成功加载并重构。`);
     } catch (error) {
         console.error(`[${extensionName}] 扩展初始化失败:`, error);
-        toastr.error(`扩展 '${extensionName}' 初始化失败: ${error.message}`);
+        if (toastr) {
+            toastr.error(
+                `扩展 '${extensionName}' 初始化失败: ${error.message}`,
+            );
+        } else {
+            alert(`扩展 '${extensionName}' 初始化失败: ${error.message}`);
+        }
     }
 });
