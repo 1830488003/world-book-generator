@@ -1,31 +1,31 @@
-<div class="wbg-settings">
+<div class="wbg-settings-container">
+    <h4>世界书生成器 (World Book Generator)</h4>
     <div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header">
-            <b>世界书生成器</b>
-            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+            <b>关于插件</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-info"></div>
         </div>
         <div class="inline-drawer-content">
-            <div class="setting_item">
-                <div class="setting_name">说明</div>
-                <div class="setting_value">
-                    <p>一个从零开始，通过AI生成全新世界书的扩展。</p>
-                </div>
+            <p>一个用于从零开始、分阶段、引导式地创建SillyTavern世界书的扩展。</p>
+            <p>作者: momo</p>
+            <p>Github: <a href="https://github.com/1830488003/world-book-generator" target="_blank">点击访问</a></p>
+        </div>
+    </div>
+    <div id="wbg-updater-section" class="updater-section">
+        <hr>
+        <h5><i class="fa-solid fa-arrows-rotate"></i> 更新管理</h5>
+        <div class="updater-controls">
+            <div class="updater-version-display">
+                <span>当前版本: </span>
+                <span id="wbg-current-version">加载中...</span>
             </div>
-            <hr>
-            <!-- 关于信息 -->
-            <div class="setting_item">
-                <div class="setting_name">作者</div>
-                <div class="setting_value">
-                    <p>默默</p>
-                </div>
-            </div>
-             <div class="setting_item">
-                <div class="setting_name">联系方式</div>
-                <div class="setting_value">
-                    <p>默默的角色卡QQ群1: 118774271</p>
-                    <p>默默的角色卡QQ群2: 705941358</p>
-                </div>
-            </div>
+            <button id="wbg-check-update-button" class="menu_button">
+                <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
+            </button>
+        </div>
+        <div class="updater-toggle">
+            <label for="wbg-auto-update-toggle">自动检查更新</label>
+            <input type="checkbox" id="wbg-auto-update-toggle" class="wbg-toggle" checked>
         </div>
     </div>
 </div>

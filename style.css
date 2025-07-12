@@ -19,17 +19,18 @@
     right: 20px;
     width: 50px;
     height: 50px;
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
+    background-color: #2c2c2e; /* 黑底 */
+    color: #a991d4; /* 紫色图标 */
+    border: 1px solid #444; /* 添加边框以匹配风格 */
     border-radius: 50%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     font-size: 24px;
-    cursor: pointer;
+    cursor: grab; /* 初始光标样式，提示可拖动 */
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    user-select: none; /* 防止拖动时选中文本 */
 }
 
 /* 弹窗遮罩 */
@@ -46,6 +47,17 @@
     align-items: center;
 }
 
+/* 全局隐藏滚动条 */
+html, body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
 /* 弹窗内容 */
 #wbg-popup.popup-content {
     position: relative; /* 为关闭按钮提供定位上下文 */
@@ -59,12 +71,6 @@
     max-height: 90vh;
     overflow-y: auto;
     box-sizing: border-box;
-    /* 隐藏滚动条 */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-#wbg-popup.popup-content::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, and Opera */
 }
 
 .wbg-header {
@@ -225,6 +231,17 @@
     margin-bottom: 10px;
 }
 
+/* 为随机按钮特别设置蓝底 */
+.randomize-container .action-button {
+    background-color: var(--accent-color);
+    color: white;
+    border: 1px solid var(--primary-button-hover-bg);
+}
+
+.randomize-container .action-button:hover {
+    background-color: var(--primary-button-hover-bg);
+}
+
 details {
     margin-bottom: 15px;
 }
@@ -347,4 +364,80 @@ details[open] > .summary-as-button::before {
     border-color: var(--accent-color);
     box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
     transform: translateY(-2px);
+}
+
+/* Settings Page Styles */
+.wbg-settings-container {
+    padding: 10px;
+    background-color: var(--bg1);
+    color: var(--text-color);
+}
+
+.wbg-settings-container h4, .wbg-settings-container h5 {
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.updater-section {
+    margin-top: 15px;
+}
+
+.updater-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.updater-version-display {
+    font-size: 0.9em;
+}
+
+#wbg-current-version {
+    font-weight: bold;
+    color: var(--link-color);
+}
+
+.updater-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9em;
+}
+
+/* Modern Toggle Switch */
+.wbg-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background-color: var(--secondary-bg);
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.wbg-toggle::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    top: 1px;
+    left: 2px;
+    transition: transform 0.2s;
+}
+
+.wbg-toggle:checked {
+    background-color: var(--accent-color);
+}
+
+.wbg-toggle:checked::before {
+    transform: translateX(20px);
 }
