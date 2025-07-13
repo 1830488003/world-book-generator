@@ -715,10 +715,7 @@ jQuery(async () => {
                     : await tavernHelperApi.generateRaw(payload);
 
             // v35.0.0: 无论成功失败，都显示AI的原始返回
-            displayDebugInfo(
-                '【调试】手动角色生成AI 原始返回',
-                response,
-            );
+            displayDebugInfo('【调试】手动角色生成AI 原始返回', response);
 
             const characterJsonString = extractAndCleanJson(response);
 
@@ -1688,6 +1685,7 @@ jQuery(async () => {
             const stages = [
                 {
                     name: '一 (世界基石)',
+                    count: autoGenState.stageCounts.stage1,
                     instructions: instructions.stage1_instruction || [],
                     promptFile: 'generator-prompt.txt',
                     promptReplacer: (template, instruction) =>
@@ -1698,6 +1696,7 @@ jQuery(async () => {
                 },
                 {
                     name: '二 (剧情构思)',
+                    count: autoGenState.stageCounts.stage2,
                     instructions: instructions.stage2_instruction || [],
                     promptFile: 'story-prompt.txt',
                     promptReplacer: (template, instruction, entries) =>
@@ -1711,6 +1710,7 @@ jQuery(async () => {
                 },
                 {
                     name: '三 (细节填充)',
+                    count: autoGenState.stageCounts.stage3,
                     instructions: instructions.stage3_instruction || [],
                     promptFile: 'detail-prompt.txt',
                     promptReplacer: (template, instruction, entries) =>
@@ -1724,6 +1724,7 @@ jQuery(async () => {
                 },
                 {
                     name: '四 (机制设计)',
+                    count: autoGenState.stageCounts.stage4,
                     instructions: instructions.stage4_instruction || [],
                     promptFile: 'mechanics-prompt.txt',
                     promptReplacer: (template, instruction, entries) =>
@@ -1745,10 +1746,13 @@ jQuery(async () => {
                     `${extensionFolderPath}/${stage.promptFile}`,
                 );
 
-                for (let i = 0; i < stage.instructions.length; i++) {
-                    const instruction = stage.instructions[i];
+                for (let i = 0; i < stage.count; i++) {
+                    // 如果“盘古”AI返回的指令数量少于用户的要求，则复用最后一条指令
+                    const instruction =
+                        stage.instructions[i] ||
+                        stage.instructions[stage.instructions.length - 1];
                     const taskDisplayName = `${stage.name} (${i + 1}/${
-                        stage.instructions.length
+                        stage.count
                     })`;
                     updateAutoGenStatus(`开始执行 ${taskDisplayName}...`);
 
