@@ -1,87 +1,102 @@
 <div class="wbg-settings-container">
-  <div class="inline-drawer">
-    <div class="inline-drawer-toggle inline-drawer-header">
-      <b>世界书生成器 (World Book Generator)</b>
-      <div class="inline-drawer-icon fa-solid fa-circle-info"></div>
-    </div>
-    <div class="inline-drawer-content">
-      <p>
-        这是一个强大的世界书构建工具，旨在通过四个引导式阶段，帮助您从零开始，系统化地创建出结构清晰、内容丰富的专业级SillyTavern世界书。
-      </p>
-      <p><b>作者:</b> momo</p>
-      <p><b>联系方式:</b> 角色卡QQ群1: 118774271 | 角色卡QQ群2: 705941358</p>
-    </div>
-  </div>
-
-  <hr />
-
-  <div class="inline-drawer">
-    <div class="inline-drawer-toggle inline-drawer-header">
-      <b><i class="fa-solid fa-arrows-rotate"></i> 更新管理</b>
-    </div>
-    <div class="inline-drawer-content">
-      <div class="wbg-updater-body">
-        <div class="wbg-version-info">
-          <span>当前版本: <span id="wbg-current-version">v9.0.1</span></span>
-          <button id="wbg-check-update-button" class="wbg-update-button">
-            <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
-          </button>
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>世界书生成器 (World Book Generator)</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-info"></div>
         </div>
-        <div class="wbg-auto-update-toggle-container">
-          <label for="wbg-auto-update-toggle">自动检查更新</label>
-          <div class="wbg-toggle-switch">
-            <input type="checkbox" id="wbg-auto-update-toggle" checked />
-            <label class="wbg-slider" for="wbg-auto-update-toggle"></label>
-          </div>
+        <div class="inline-drawer-content">
+            <p>
+                这是一个强大的世界书构建工具，旨在通过四个引导式阶段，帮助您从零开始，系统化地创建出结构清晰、内容丰富的专业级SillyTavern世界书。
+            </p>
+            <p><b>作者:</b> momo</p>
+            <p>
+                <b>联系方式:</b> 角色卡QQ群1: 118774271 | 角色卡QQ群2: 705941358
+            </p>
         </div>
-      </div>
     </div>
-  </div>
 
-  <hr />
+    <hr />
 
-  <!-- AI 源选择 -->
-  <div class="setting_item">
-    <label for="wbg-ai-source">AI 源</label>
-    <select id="wbg-ai-source" class="text_pole">
-      <option value="tavern">酒馆 AI (Tavern AI)</option>
-      <option value="custom">自定义 AI (Custom AI)</option>
-    </select>
-  </div>
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b><i class="fa-solid fa-arrows-rotate"></i> 更新管理</b>
+        </div>
+        <div class="inline-drawer-content">
+            <div class="wbg-updater-body">
+                <div class="wbg-version-info">
+                    <span
+                        >当前版本:
+                        <span id="wbg-current-version">v9.0.1</span></span
+                    >
+                    <button
+                        id="wbg-check-update-button"
+                        class="wbg-update-button"
+                    >
+                        <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
+                    </button>
+                </div>
+                <div class="wbg-auto-update-toggle-container">
+                    <label for="wbg-auto-update-toggle">自动检查更新</label>
+                    <div class="wbg-toggle-switch">
+                        <input
+                            type="checkbox"
+                            id="wbg-auto-update-toggle"
+                            checked
+                        />
+                        <label
+                            class="wbg-slider"
+                            for="wbg-auto-update-toggle"
+                        ></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <!-- 自定义AI配置区域，默认隐藏 -->
-  <div id="wbg-custom-api-settings" class="hidden">
+    <hr />
+
+    <!-- AI 源选择 -->
     <div class="setting_item">
-      <label for="wbg-api-url">API 基础URL</label>
-      <input
-        id="wbg-api-url"
-        type="text"
-        class="text_pole"
-        placeholder="例如: http://127.0.0.1:5001/v1"
-      />
+        <label for="wbg-ai-source">AI 源</label>
+        <select id="wbg-ai-source" class="text_pole">
+            <option value="tavern">酒馆 AI (Tavern AI)</option>
+            <option value="custom">自定义 AI (Custom AI)</option>
+        </select>
     </div>
-    <div class="setting_item">
-      <label for="wbg-api-key">API 密钥 (可选)</label>
-      <input
-        id="wbg-api-key"
-        type="password"
-        class="text_pole"
-        placeholder="如果需要的话，请输入API Key"
-      />
+
+    <!-- 自定义AI配置区域，默认隐藏 -->
+    <div id="wbg-custom-api-settings" class="hidden">
+        <div class="setting_item">
+            <label for="wbg-api-url">API 基础URL</label>
+            <input
+                id="wbg-api-url"
+                type="text"
+                class="text_pole"
+                placeholder="例如: http://127.0.0.1:5001/v1"
+            />
+        </div>
+        <div class="setting_item">
+            <label for="wbg-api-key">API 密钥 (可选)</label>
+            <input
+                id="wbg-api-key"
+                type="password"
+                class="text_pole"
+                placeholder="如果需要的话，请输入API Key"
+            />
+        </div>
+        <div class="setting_item">
+            <label for="wbg-api-model">模型名称</label>
+            <div class="flex-container">
+                <select id="wbg-api-model" class="text_pole"></select>
+                <button
+                    id="wbg-fetch-models"
+                    class="menu_button fa-solid fa-arrows-rotate"
+                    title="加载模型列表"
+                ></button>
+            </div>
+        </div>
+        <div class="setting_item">
+            <button id="wbg-save-api" class="menu_button">保存自定义API</button>
+        </div>
     </div>
-    <div class="setting_item">
-      <label for="wbg-api-model">模型名称</label>
-      <div class="flex-container">
-        <select id="wbg-api-model" class="text_pole"></select>
-        <button
-          id="wbg-fetch-models"
-          class="menu_button fa-solid fa-arrows-rotate"
-          title="加载模型列表"
-        ></button>
-      </div>
-    </div>
-    <div class="setting_item">
-      <button id="wbg-save-api" class="menu_button">保存自定义API</button>
-    </div>
-  </div>
 </div>

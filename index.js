@@ -177,15 +177,23 @@ jQuery(async () => {
                 const manifestUrl = `/${extensionFolderPath}/manifest.json?v=${Date.now()}`;
                 const response = await fetch(manifestUrl);
                 if (!response.ok) {
-                    throw new Error(`无法加载本地 manifest: ${response.statusText}`);
+                    throw new Error(
+                        `无法加载本地 manifest: ${response.statusText}`,
+                    );
                 }
                 const manifest = await response.json();
                 this.currentVersion = manifest.version;
 
                 this.elements = {
-                    versionDisplay: document.getElementById('wbg-current-version'),
-                    checkButton: document.getElementById('wbg-check-update-button'),
-                    autoUpdateToggle: document.getElementById('wbg-auto-update-toggle'),
+                    versionDisplay: document.getElementById(
+                        'wbg-current-version',
+                    ),
+                    checkButton: document.getElementById(
+                        'wbg-check-update-button',
+                    ),
+                    autoUpdateToggle: document.getElementById(
+                        'wbg-auto-update-toggle',
+                    ),
                 };
 
                 if (this.elements.versionDisplay) {
@@ -200,14 +208,18 @@ jQuery(async () => {
                 }
             } catch (error) {
                 console.error('WBGUpdater 初始化失败:', error);
-                if (toastr) toastr.error(`更新检查器初始化失败: ${error.message}`);
+                if (toastr)
+                    toastr.error(`更新检查器初始化失败: ${error.message}`);
             }
         }
 
         setupEventListeners() {
-            if (!this.elements.checkButton || !this.elements.autoUpdateToggle) return;
+            if (!this.elements.checkButton || !this.elements.autoUpdateToggle)
+                return;
 
-            this.elements.checkButton.addEventListener('click', () => this.checkForUpdates(true));
+            this.elements.checkButton.addEventListener('click', () =>
+                this.checkForUpdates(true),
+            );
             this.elements.autoUpdateToggle.addEventListener('change', (e) => {
                 localStorage.setItem(this.storageKey, e.target.checked);
                 if (e.target.checked) {
@@ -222,35 +234,47 @@ jQuery(async () => {
         loadSettings() {
             if (!this.elements.autoUpdateToggle) return;
             const autoUpdateEnabled = localStorage.getItem(this.storageKey);
-            this.elements.autoUpdateToggle.checked = autoUpdateEnabled !== 'false';
+            this.elements.autoUpdateToggle.checked =
+                autoUpdateEnabled !== 'false';
         }
 
         async checkForUpdates(manual = false) {
             if (manual) {
                 if (toastr) toastr.info('正在检查更新...');
                 this.elements.checkButton.disabled = true;
-                this.elements.checkButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检查中...';
+                this.elements.checkButton.innerHTML =
+                    '<i class="fas fa-spinner fa-spin"></i> 检查中...';
             }
             try {
                 const response = await fetch(
                     `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/manifest.json?v=${new Date().getTime()}`,
                 );
                 if (!response.ok) {
-                    throw new Error(`从 Github 获取 manifest 失败: ${response.statusText}`);
+                    throw new Error(
+                        `从 Github 获取 manifest 失败: ${response.statusText}`,
+                    );
                 }
                 const remoteManifest = await response.json();
                 this.latestVersion = remoteManifest.version;
 
-                console.log(`[${extensionName}] 当前版本: ${this.currentVersion}, 最新版本: ${this.latestVersion}`);
+                console.log(
+                    `[${extensionName}] 当前版本: ${this.currentVersion}, 最新版本: ${this.latestVersion}`,
+                );
 
-                if (this.compareVersions(this.latestVersion, this.currentVersion) > 0) {
+                if (
+                    this.compareVersions(
+                        this.latestVersion,
+                        this.currentVersion,
+                    ) > 0
+                ) {
                     const releaseUrl = `https://github.com/${this.owner}/${this.repo}/`;
                     if (toastr) {
                         toastr.success(
                             `发现新版本 v${this.latestVersion}！点击这里前往Github仓库页面。`,
                             '更新提示',
                             {
-                                onclick: () => window.open(releaseUrl, '_blank'),
+                                onclick: () =>
+                                    window.open(releaseUrl, '_blank'),
                                 timeOut: 0,
                                 extendedTimeOut: 0,
                             },
@@ -262,12 +286,15 @@ jQuery(async () => {
             } catch (error) {
                 console.error('WBGUpdater: 检查更新失败', error);
                 if (manual && toastr) {
-                    toastr.error(`检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`);
+                    toastr.error(
+                        `检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`,
+                    );
                 }
             } finally {
                 if (manual) {
                     this.elements.checkButton.disabled = false;
-                    this.elements.checkButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新';
+                    this.elements.checkButton.innerHTML =
+                        '<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新';
                 }
             }
         }
@@ -590,6 +617,21 @@ jQuery(async () => {
         return healedJsonString;
     }
 
+    /**
+     * v35.0.0 新增：在UI中显示调试信息
+     * @param {string} title - 调试窗口的标题
+     * @param {string} content - 要显示的原始文本内容
+     */
+    function displayDebugInfo(title, content) {
+        const container = $('#wbg-debug-output-container');
+        const outputArea = $('#wbg-debug-output');
+        const titleElement = container.find('h3');
+
+        titleElement.text(title);
+        outputArea.val(content);
+        container.show();
+    }
+
     function sanitizeEntry(entry) {
         // 定义世界书条目允许的字段白名单
         const allowedKeys = [
@@ -671,6 +713,12 @@ jQuery(async () => {
                 settings.aiSource === 'custom'
                     ? await callCustomApi(payload)
                     : await tavernHelperApi.generateRaw(payload);
+
+            // v35.0.0: 无论成功失败，都显示AI的原始返回
+            displayDebugInfo(
+                '【调试】手动角色生成AI 原始返回',
+                response,
+            );
 
             const characterJsonString = extractAndCleanJson(response);
 
@@ -1555,10 +1603,19 @@ jQuery(async () => {
             // 1. 任务拆解
             updateAutoGenStatus('正在请求“盘古”AI拆解核心任务...');
             const decomposerTask = async () => {
-                const decomposerTemplate = await $.get(
-                    `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
-                );
-                const decomposerPrompt = decomposerTemplate
+                // 修正：加载正确的“思想钢印”文件 unrestrict-prompt.txt
+                const [decomposerTemplate, unrestrictPrompt] =
+                    await Promise.all([
+                        $.get(
+                            `${extensionFolderPath}/auto-generator-decomposer-prompt.txt`,
+                        ),
+                        $.get(`${extensionFolderPath}/unrestrict-prompt.txt`),
+                    ]);
+
+                // 将“无限制”指令作为更高阶的指令，注入到任务拆解提示词的最前端
+                const combinedTemplate = `${unrestrictPrompt}\n\n---\n\n${decomposerTemplate}`;
+
+                const decomposerPrompt = combinedTemplate
                     .replace('{{core_theme}}', autoGenState.coreTheme)
                     .replace(
                         '{{stage1_count}}',
@@ -1583,14 +1640,29 @@ jQuery(async () => {
                     ],
                     max_new_tokens: 2048,
                 };
+
+                // 新增：打印最终发送给“盘古”AI的提示词
+                console.groupCollapsed(
+                    '【发送指令】查看发送给“盘古”AI的完整提示词 (点击展开)',
+                );
+                console.log(decomposerPrompt);
+                console.groupEnd();
+
                 const decomposerResponse =
                     settings.aiSource === 'custom'
                         ? await callCustomApi(decomposerPayload)
                         : await tavernHelperApi.generateRaw(decomposerPayload);
 
+                // v35.0.0: 无论成功失败，都显示AI的原始返回
+                displayDebugInfo(
+                    '【调试】“盘古”AI 原始返回',
+                    decomposerResponse,
+                );
+
                 const cleanedDecomposerJson =
                     extractAndCleanJson(decomposerResponse);
                 const parsedInstructions = JSON.parse(cleanedDecomposerJson);
+
                 if (
                     !parsedInstructions.stage1_instruction ||
                     !Array.isArray(parsedInstructions.stage1_instruction)
@@ -1697,11 +1769,26 @@ jQuery(async () => {
                             ],
                             max_new_tokens: 8192,
                         };
+
+                        // 新增：打印发送给各阶段生成AI的提示词
+                        console.groupCollapsed(
+                            `【发送指令】查看发送给阶段 ${stage.name} AI的完整提示词 (点击展开)`,
+                        );
+                        console.log(finalPrompt);
+                        console.groupEnd();
+
                         // 3. 调用AI
                         const response =
                             settings.aiSource === 'custom'
                                 ? await callCustomApi(payload)
                                 : await tavernHelperApi.generateRaw(payload);
+
+                        // v35.0.0: 无论成功失败，都显示AI的原始返回
+                        displayDebugInfo(
+                            `【调试】阶段 ${stage.name} AI 原始返回`,
+                            response,
+                        );
+
                         // 4. 解析并返回结果
                         return JSON.parse(extractAndCleanJson(response));
                     };
@@ -1895,6 +1982,9 @@ jQuery(async () => {
                 ? await callCustomApi(payload)
                 : await tavernHelperApi.generateRaw(payload);
 
+        // v35.0.0: 无论成功失败，都显示AI的原始返回
+        displayDebugInfo('【调试】“导演”角色卡AI 原始返回', aiResponse);
+
         const characterJson = extractAndCleanJson(aiResponse);
 
         if (!characterJson) {
@@ -1914,7 +2004,6 @@ jQuery(async () => {
             'auto',
         );
     }
-
 
     async function handleContinue() {
         const selectedBook = String($('#existingBooksDropdown').val());
@@ -1985,17 +2074,28 @@ jQuery(async () => {
             'mechanics_elements.json': 'mechanicsElementPool',
         };
 
-        const promises = Object.keys(dataFiles).map(fileName => {
+        const promises = Object.keys(dataFiles).map((fileName) => {
             const url = `/${extensionFolderPath}/data/${fileName}?v=${Date.now()}`;
             return $.getJSON(url)
-                .then(data => ({ status: 'fulfilled', value: data, key: dataFiles[fileName] }))
-                .catch(error => ({ status: 'rejected', reason: `Failed to load ${fileName}: ${error.statusText}`, key: dataFiles[fileName] }));
+                .then((data) => ({
+                    status: 'fulfilled',
+                    value: data,
+                    key: dataFiles[fileName],
+                }))
+                .catch((error) => ({
+                    status: 'rejected',
+                    reason: `Failed to load ${fileName}: ${error.statusText}`,
+                    key: dataFiles[fileName],
+                }));
         });
 
         const results = await Promise.allSettled(promises);
 
-        results.forEach(result => {
-            if (result.status === 'fulfilled' && result.value.status === 'fulfilled') {
+        results.forEach((result) => {
+            if (
+                result.status === 'fulfilled' &&
+                result.value.status === 'fulfilled'
+            ) {
                 const key = result.value.key;
                 const data = result.value.value;
                 switch (key) {
@@ -2016,13 +2116,13 @@ jQuery(async () => {
                         break;
                 }
             } else {
-                const reason = result.reason || (result.value && result.value.reason);
+                const reason =
+                    result.reason || (result.value && result.value.reason);
                 console.error(`[${extensionName}] ${reason}`);
                 if (toastr) toastr.warning(reason, '数据池加载部分失败');
             }
         });
     }
-
 
     async function initializeExtension() {
         console.log(`[${extensionName}] 1. 开始初始化...`);

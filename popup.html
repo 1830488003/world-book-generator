@@ -74,6 +74,12 @@
                         <!-- 状态更新将由JS动态插入此处 -->
                     </ul>
                 </div>
+
+                <!-- 新增：最终调试输出区域 -->
+                <div id="wbg-debug-output-container" class="input-group" style="display: none; margin-top: 15px;">
+                    <label for="wbg-debug-output" style="color: #F44336; font-weight: bold;">【最终调试】AI原始返回数据 (完整版):</label>
+                    <textarea id="wbg-debug-output" class="wbg-textarea" rows="10" readonly></textarea>
+                </div>
                 <div id="wbg-autogen-finished-buttons" class="wbg-button-group centered" style="display: none; margin-top: 20px;">
                     <button id="wbg-autogen-back-to-home" class="action-button secondary">返回主页面</button>
                     <button id="wbg-autogen-finish-task" class="action-button primary">完成并开始新任务</button>
