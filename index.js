@@ -449,7 +449,7 @@ jQuery(async () => {
         const body = JSON.stringify({
             model: apiModel,
             messages: payload.ordered_prompts,
-            max_tokens: payload.max_new_tokens || 8192,
+            max_tokens: payload.max_tokens || 60000,
             stream: false,
         });
 
@@ -706,7 +706,7 @@ jQuery(async () => {
 
             const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
-                max_new_tokens: 2048,
+                max_tokens: 60000,
             };
 
             const response =
@@ -1049,7 +1049,7 @@ jQuery(async () => {
 
             const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
-                max_new_tokens: 8192,
+                max_tokens: 60000,
             };
 
             const rawAiResponse =
@@ -1162,7 +1162,7 @@ jQuery(async () => {
             );
             const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
-                max_new_tokens: 8192,
+                max_tokens: 60000,
             };
             const rawAiResponse =
                 settings.aiSource === 'custom'
@@ -1275,7 +1275,7 @@ jQuery(async () => {
             );
             const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
-                max_new_tokens: 8192,
+                max_tokens: 60000,
             };
             const rawAiResponse =
                 settings.aiSource === 'custom'
@@ -1391,7 +1391,7 @@ jQuery(async () => {
             );
             const payload = {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
-                max_new_tokens: 8192,
+                max_tokens: 60000,
             };
             const rawAiResponse =
                 settings.aiSource === 'custom'
@@ -1560,32 +1560,72 @@ jQuery(async () => {
 
     // 真正的后台生成任务
     async function doAutomatedGeneration() {
-        const maxRetries = 3;
+        const maxRetries = 10;
         const retryDelay = 2000;
 
         /**
-         * 新的、精确的重试辅助函数
+         * 新的、精确的重试辅助函数，增加了手动重试功能
          * @param {Function} taskFn - 要执行的异步任务函数
          * @param {string} taskName - 用于日志记录的任务名称
          * @returns {Promise<any>} - 任务函数的返回值
          */
         const executeTaskWithRetry = async (taskFn, taskName) => {
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    return await taskFn(); // 尝试执行任务
-                } catch (error) {
-                    if (attempt < maxRetries) {
-                        updateAutoGenStatus(
-                            `错误: ${taskName}失败 - ${error.message}. 正在进行第 ${attempt}/${maxRetries} 次重试...`,
-                        );
-                        await delay(retryDelay);
-                    } else {
-                        // 在所有重试失败后，抛出最终错误
-                        throw new Error(
-                            `${taskName}在 ${maxRetries} 次尝试后仍然失败: ${error.message}`,
-                        );
+            let lastError = null;
+
+            while (true) {
+                // 外部循环，用于处理手动重试
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        // 在每次尝试前，清除可能存在的旧的重试按钮
+                        $('#wbg-retry-button-container').remove();
+                        return await taskFn(); // 尝试执行任务
+                    } catch (error) {
+                        lastError = error; // 记录最后一次错误
+                        const errorMessage = `错误: ${taskName}失败 - ${error.message}.`;
+                        if (attempt < maxRetries) {
+                            updateAutoGenStatus(
+                                `${errorMessage} 正在进行第 ${attempt}/${maxRetries} 次重试...`,
+                            );
+                            await delay(retryDelay);
+                        } else {
+                            // 10次自动重试全部失败，跳出内层循环，准备用户交互
+                            break;
+                        }
                     }
                 }
+
+                // 自动重试耗尽，现在需要用户干预
+                updateAutoGenStatus(
+                    `错误: ${taskName}在 ${maxRetries} 次自动重试后仍然失败: ${lastError.message}。请检查错误信息，然后决定是否继续。`,
+                );
+
+                // 创建一个Promise，等待用户点击按钮
+                await new Promise((resolve) => {
+                    const statusList = $('#auto-gen-status-list');
+                    // 确保不会重复添加按钮
+                    if ($('#wbg-retry-button-container').length === 0) {
+                        const retryContainer = $(`
+                            <li id="wbg-retry-button-container" style="list-style-type: none; margin-top: 10px;">
+                                <button id="wbg-manual-retry-button" class="wbg-button">
+                                    <i class="fa-solid fa-rotate-right"></i> 在此步骤上继续重试10次
+                                </button>
+                            </li>
+                        `);
+                        statusList.append(retryContainer);
+
+                        $('#wbg-manual-retry-button').one('click', function () {
+                            $(this)
+                                .prop('disabled', true)
+                                .text('正在准备重试...');
+                            resolve(); // 用户点击后，Promise完成
+                        });
+                    }
+                });
+
+                // 用户点击了按钮，外部 while 循环将继续，开始新一轮的10次尝试
+                updateAutoGenStatus(
+                    `用户选择继续。正在重新尝试任务: ${taskName}...`,
+                );
             }
         };
 
@@ -1635,7 +1675,7 @@ jQuery(async () => {
                     ordered_prompts: [
                         { role: 'user', content: decomposerPrompt },
                     ],
-                    max_new_tokens: 2048,
+                    max_tokens: 60000,
                 };
 
                 // 新增：打印最终发送给“盘古”AI的提示词
@@ -1771,7 +1811,7 @@ jQuery(async () => {
                             ordered_prompts: [
                                 { role: 'user', content: finalPrompt },
                             ],
-                            max_new_tokens: 8192,
+                            max_tokens: 60000,
                         };
 
                         // 新增：打印发送给各阶段生成AI的提示词
@@ -1978,7 +2018,7 @@ jQuery(async () => {
         updateAutoGenStatus('🧠 正在调用AI生成角色设定...');
         const payload = {
             ordered_prompts: [{ role: 'user', content: finalPrompt }],
-            max_new_tokens: 2048, // 角色卡生成不需要太大
+            max_tokens: 60000, // 角色卡生成不需要太大
         };
 
         const aiResponse =
