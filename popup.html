@@ -23,6 +23,10 @@
                     </button>
                     <button id="startNewButton" class="action-button primary">创建新世界 (手动版)</button>
                     <button id="startAutoButton" class="action-button primary">创建世界书 (自动版)</button>
+                    <div id="wbg-credits-container" class="credits-container">
+                        <span>剩余次数: <strong id="wbg-credits-count">100</strong></span>
+                        <button id="wbg-recharge-button" class="action-button secondary small-button">充值</button>
+                    </div>
                     <div class="continue-section">
                         <select id="existingBooksDropdown">
                             <option value="">选择一个已有的世界书...</option>
@@ -239,4 +243,30 @@
     </div>
     <!-- 脚本将在SillyTavern环境中由index.js动态加载 -->
 </body>
+<div id="wbg-recharge-modal" class="wbg-modal" style="display: none;">
+    <div class="wbg-modal-content">
+        <span id="wbg-recharge-modal-close" class="close-button">&times;</span>
+        <h3>充值AI调用次数</h3>
+        <div id="wbg-recharge-step-1">
+            <p>请选择充值档位：</p>
+            <div class="wbg-tier-options">
+                <button class="wbg-tier-button" data-tier="tier1" data-price="10" data-credits="100">10元 / 100次</button>
+                <button class="wbg-tier-button" data-tier="tier2" data-price="20" data-credits="300">20元 / 300次</button>
+                <button class="wbg-tier-button" data-tier="tier3" data-price="30" data-credits="500">30元 / 500次</button>
+            </div>
+        </div>
+        <div id="wbg-recharge-step-2" style="display: none;">
+            <p>请使用支付宝扫描下方二维码，支付 <strong id="wbg-recharge-price"></strong> 元。</p>
+            <p class="wbg-important-note">重要：请务必在转账时，将下面的“支付口令”填写到【备注】中！</p>
+            <div class="wbg-payment-qrcode-container">
+                <img id="wbg-payment-qrcode" src="/scripts/extensions/third-party/world-book-generator/支付宝付款码.jpg" alt="支付宝收款码">
+            </div>
+            <div class="wbg-payment-code-container">
+                <span>支付口令:</span>
+                <strong id="wbg-payment-code"></strong>
+            </div>
+            <div id="wbg-payment-status">正在等待支付确认...</div>
+        </div>
+    </div>
+</div>
 </html>

@@ -3,6 +3,7 @@ jQuery(async () => {
     // -----------------------------------------------------------------
     // 1. 定义常量和状态变量
     // -----------------------------------------------------------------
+    const PAYMENT_SERVER_URL = 'https://world-book-payment-server.vercel.app';
     const extensionName = 'world-book-generator';
     const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
     let tavernHelperApi; // 存储 TavernHelper API
@@ -709,10 +710,7 @@ jQuery(async () => {
                 max_tokens: 60000,
             };
 
-            const response =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(payload)
-                    : await tavernHelperApi.generateRaw(payload);
+            const response = await callApiWithCredits(payload);
 
             // v35.0.0: 无论成功失败，都显示AI的原始返回
             displayDebugInfo('【调试】手动角色生成AI 原始返回', response);
@@ -1052,10 +1050,7 @@ jQuery(async () => {
                 max_tokens: 60000,
             };
 
-            const rawAiResponse =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(payload)
-                    : await tavernHelperApi.generateRaw(payload);
+            const rawAiResponse = await callApiWithCredits(payload);
 
             projectState.generatedContent = rawAiResponse;
             $('#aiResponseTextArea').val(rawAiResponse);
@@ -1164,10 +1159,7 @@ jQuery(async () => {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_tokens: 60000,
             };
-            const rawAiResponse =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(payload)
-                    : await tavernHelperApi.generateRaw(payload);
+            const rawAiResponse = await callApiWithCredits(payload);
 
             projectState.generatedOutlineContent = rawAiResponse;
             $('#aiResponseTextArea-stage2').val(rawAiResponse);
@@ -1277,10 +1269,7 @@ jQuery(async () => {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_tokens: 60000,
             };
-            const rawAiResponse =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(payload)
-                    : await tavernHelperApi.generateRaw(payload);
+            const rawAiResponse = await callApiWithCredits(payload);
 
             projectState.generatedDetailContent = rawAiResponse;
             $('#aiResponseTextArea-stage3').val(rawAiResponse);
@@ -1393,10 +1382,7 @@ jQuery(async () => {
                 ordered_prompts: [{ role: 'user', content: finalPrompt }],
                 max_tokens: 60000,
             };
-            const rawAiResponse =
-                settings.aiSource === 'custom'
-                    ? await callCustomApi(payload)
-                    : await tavernHelperApi.generateRaw(payload);
+            const rawAiResponse = await callApiWithCredits(payload);
 
             projectState.generatedMechanicsContent = rawAiResponse;
             $('#aiResponseTextArea-stage4').val(rawAiResponse);
@@ -1686,9 +1672,7 @@ jQuery(async () => {
                 console.groupEnd();
 
                 const decomposerResponse =
-                    settings.aiSource === 'custom'
-                        ? await callCustomApi(decomposerPayload)
-                        : await tavernHelperApi.generateRaw(decomposerPayload);
+                    await callApiWithCredits(decomposerPayload);
 
                 // v35.0.0: 无论成功失败，都显示AI的原始返回
                 displayDebugInfo(
@@ -1822,10 +1806,7 @@ jQuery(async () => {
                         console.groupEnd();
 
                         // 3. 调用AI
-                        const response =
-                            settings.aiSource === 'custom'
-                                ? await callCustomApi(payload)
-                                : await tavernHelperApi.generateRaw(payload);
+                        const response = await callApiWithCredits(payload);
 
                         // v35.0.0: 无论成功失败，都显示AI的原始返回
                         displayDebugInfo(
@@ -2021,10 +2002,7 @@ jQuery(async () => {
             max_tokens: 60000, // 角色卡生成不需要太大
         };
 
-        const aiResponse =
-            settings.aiSource === 'custom'
-                ? await callCustomApi(payload)
-                : await tavernHelperApi.generateRaw(payload);
+        const aiResponse = await callApiWithCredits(payload);
 
         // v35.0.0: 无论成功失败，都显示AI的原始返回
         displayDebugInfo('【调试】“导演”角色卡AI 原始返回', aiResponse);
@@ -2366,7 +2344,221 @@ jQuery(async () => {
         populatePlotOptions();
         populateDetailOptions();
         populateMechanicsOptions();
+
+        // --- 全面重构：计次与充值功能初始化 ---
+        creditManager.init();
+        rechargeManager.init();
     }
+
+    // --- 新增：计次系统管理器 ---
+    const creditManager = {
+        credits: 100,
+        storageKey: 'wbg_credits',
+        countElement: null,
+
+        init() {
+            this.countElement = $('#wbg-credits-count');
+            const savedCredits = localStorage.getItem(this.storageKey);
+            if (savedCredits !== null) {
+                this.credits = parseInt(savedCredits, 10);
+            } else {
+                // 首次使用，赠送100次
+                this.credits = 100;
+                localStorage.setItem(this.storageKey, this.credits);
+            }
+            this.updateDisplay();
+        },
+
+        get() {
+            return this.credits;
+        },
+
+        use() {
+            if (this.credits <= 0) {
+                toastr.error('AI调用次数已用完，请充值。');
+                // 自动弹出充值窗口
+                rechargeManager.showModal();
+                return false; // 表示次数不足
+            }
+            this.credits--;
+            localStorage.setItem(this.storageKey, this.credits);
+            this.updateDisplay();
+            return true; // 表示扣除成功
+        },
+
+        add(amount) {
+            this.credits += amount;
+            localStorage.setItem(this.storageKey, this.credits);
+            this.updateDisplay();
+            toastr.success(`成功充值 ${amount} 次！`);
+        },
+
+        updateDisplay() {
+            if (this.countElement) {
+                this.countElement.text(this.credits);
+            }
+            // 如果次数为0，禁用所有生成按钮
+            const allGenerateButtons = $('.action-button.primary');
+            if (this.credits <= 0) {
+                allGenerateButtons.prop('disabled', true);
+                $('#runAutoGenerationButton').text('次数不足，请充值');
+            } else {
+                allGenerateButtons.prop('disabled', false);
+                // 恢复按钮原来的文本
+                $('#generateFoundationButton').text('生成/补充内容');
+                $('#generateOutlineButton').text('生成/补充剧情');
+                $('#generateDetailButton').text('生成/补充细节');
+                $('#generateMechanicsButton').text('设计/补充机制');
+                $('#generate-char-button').text('生成角色数据');
+                $('#runAutoGenerationButton').text('开始全自动生成');
+            }
+        },
+    };
+
+    // --- 新增：AI调用封装函数 (集成计次) ---
+    async function callApiWithCredits(payload) {
+        if (!creditManager.use()) {
+            // 如果次数不足，creditManager.use()会返回false并处理UI提示
+            throw new Error('AI调用次数已用完。');
+        }
+        // 次数充足，继续执行API调用
+        try {
+            return settings.aiSource === 'custom'
+                ? await callCustomApi(payload)
+                : await tavernHelperApi.generateRaw(payload);
+        } catch (error) {
+            // 如果API调用失败，把扣掉的次数还给用户
+            creditManager.add(1);
+            toastr.warning('API调用失败，已返还本次消耗的次数。');
+            throw error; // 继续向上抛出错误
+        }
+    }
+
+    // --- 新增：充值逻辑管理器 (已适配新版API) ---
+    const rechargeManager = {
+        modal: null,
+        closeButton: null,
+        rechargeButton: null,
+        tierButtons: null,
+        step1: null,
+        step2: null,
+        priceElement: null,
+        codeElement: null,
+        statusElement: null,
+
+        orderId: null, // 从 requestId 改为 orderId
+        pollInterval: null,
+
+        init() {
+            this.modal = $('#wbg-recharge-modal');
+            this.closeButton = $('#wbg-recharge-modal-close');
+            this.rechargeButton = $('#wbg-recharge-button');
+            this.tierButtons = $('.wbg-tier-button');
+            this.step1 = $('#wbg-recharge-step-1');
+            this.step2 = $('#wbg-recharge-step-2');
+            this.priceElement = $('#wbg-recharge-price');
+            this.codeElement = $('#wbg-payment-code');
+            this.statusElement = $('#wbg-payment-status');
+
+            this.rechargeButton.on('click', () => this.showModal());
+            this.closeButton.on('click', () => this.hideModal());
+            this.tierButtons.on('click', (event) => {
+                const tier = $(event.currentTarget).data('tier');
+                this.initiateRecharge(tier);
+            });
+        },
+
+        showModal() {
+            this.step1.show();
+            this.step2.hide();
+            this.tierButtons.prop('disabled', false);
+            this.modal.css('display', 'flex'); // 使用flex来居中
+        },
+
+        hideModal() {
+            this.modal.hide();
+            if (this.pollInterval) {
+                clearInterval(this.pollInterval);
+                this.pollInterval = null;
+            }
+        },
+
+        async initiateRecharge(tier) {
+            this.tierButtons.prop('disabled', true);
+            toastr.info('正在生成支付订单...');
+
+            try {
+                // 请求新的API端点，并且不再发送requestId
+                const response = await fetch(
+                    `${PAYMENT_SERVER_URL}/api/create-order`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tier }),
+                    },
+                );
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || '无法连接支付服务器。');
+                }
+
+                const data = await response.json();
+                this.orderId = data.orderId; // 保存 orderId 用于轮询
+
+                // 更新UI，二维码是静态的，不需要从后端获取URL
+                this.priceElement.text(data.price);
+                this.codeElement.text(data.orderId); // 显示订单ID作为支付口令
+
+                this.step1.hide();
+                this.step2.show();
+                this.statusElement.text('正在等待支付确认...');
+
+                // 开始轮询
+                this.pollInterval = setInterval(
+                    () => this.checkRechargeStatus(),
+                    3000,
+                );
+            } catch (error) {
+                console.error('充值初始化失败:', error);
+                toastr.error(`获取支付信息失败: ${error.message}`);
+                this.tierButtons.prop('disabled', false);
+            }
+        },
+
+        async checkRechargeStatus() {
+            if (!this.orderId) return;
+
+            try {
+                // 查询新的API端点
+                const response = await fetch(
+                    `${PAYMENT_SERVER_URL}/api/order-status?orderId=${this.orderId}`,
+                );
+                if (!response.ok) {
+                    console.warn('支付状态查询失败，将在下次轮询时重试。');
+                    return;
+                }
+
+                const data = await response.json();
+
+                // 后端返回的状态是 'completed'
+                if (data.status === 'completed') {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
+
+                    creditManager.add(data.credits);
+
+                    this.statusElement.text('充值成功！').css('color', '#4CAF50');
+
+                    setTimeout(() => {
+                        this.hideModal();
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('轮询支付状态时发生网络错误:', error);
+            }
+        },
+    };
 
     // 运行初始化
     try {
