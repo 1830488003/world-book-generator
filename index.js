@@ -63,197 +63,196 @@ jQuery(async () => {
     let mechanicsElementPool = {};
 
     /**
-     * 异步加载所有外部数据池。
-     * @returns {Promise<void>}
+     * 【v31.0.0 最终版】从插件内部以编程方式创建角色卡，并绑定一个指定的世界书。
+     * @param {object} charData - 包含角色所有信息的对象（如name, description等）。
+     * @param {string} worldBookName - 要绑定的世界书的确切名称。传空字符串或null则不绑定。
+     * @param {File} [avatarFile] - (可选) 角色的头像文件对象。
+     * @param {string} [source='manual'] - 调用来源，'manual' 或 'auto'。
      */
-    async function loadAllDataPools() {
+    async function createCharacterWithWorldBook(
+        charData,
+        worldBookName,
+        avatarFile = null,
+        source = 'manual',
+    ) {
+        // --- 1. 准备 FormData ---
+        console.log(
+            `正在创建角色 "${charData.name}" 并绑定世界书 "${worldBookName}"...`,
+        );
+        const formData = new FormData();
+
+        // 填充所有字段
+        formData.append('ch_name', charData.name || '未命名角色');
+        formData.append('description', charData.description || '');
+        formData.append('first_mes', charData.first_message || '');
+        formData.append('personality', charData.personality || '');
+        formData.append('scenario', charData.scenario || '');
+        formData.append('creator_notes', charData.creator_notes || '');
+        formData.append('system_prompt', charData.system_prompt || '');
+        formData.append(
+            'post_history_instructions',
+            charData.post_history_instructions || '',
+        );
+        formData.append('fav', String(charData.is_favorite || false));
+        formData.append('tags', charData.tags || '');
+
+        // 绑定世界书
+        if (worldBookName) {
+            formData.append('world', worldBookName);
+        }
+
+        // 添加头像
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
+        }
+
+        // --- 2. 提交数据到服务器 ---
+        const { getRequestHeaders } = SillyTavern.getContext();
+        const headers = getRequestHeaders();
+        delete headers['Content-Type'];
+
+        let newAvatarId = null;
         try {
-            const pools = [
-                { name: 'worldElementPool', path: 'data/world_elements.json' },
-                {
-                    name: 'detailElementPool',
-                    path: 'data/detail_elements.json',
-                },
-                { name: 'plotElementPool', path: 'data/plot_elements.json' },
-                {
-                    name: 'femalePlotElementPool',
-                    path: 'data/female_plot_elements.json',
-                },
-                {
-                    name: 'mechanicsElementPool',
-                    path: 'data/mechanics_elements.json',
-                },
-            ];
+            const response = await fetch('/api/characters/create', {
+                method: 'POST',
+                headers: headers,
+                body: formData,
+                cache: 'no-cache',
+            });
 
-            const responses = await Promise.all(
-                pools.map((pool) =>
-                    fetch(`/${extensionFolderPath}/${pool.path}`),
-                ),
-            );
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`服务器错误: ${response.status} ${errorText}`);
+            }
 
-            for (const response of responses) {
-                if (!response.ok) {
-                    throw new Error(
-                        `HTTP error! status: ${response.status} for ${response.url}`,
+            newAvatarId = await response.text();
+
+            // --- 3. 最终方案：告知用户手动刷新 ---
+            if (newAvatarId) {
+                // 3.1 (可选) 更新标签全局索引
+                if (charData.tags) {
+                    await updateGlobalTagMapForCharacter(
+                        newAvatarId,
+                        charData.tags,
                     );
                 }
-            }
 
-            const data = await Promise.all(responses.map((res) => res.json()));
-
-            worldElementPool = data[0];
-            detailElementPool = data[1];
-            plotElementPool = data[2];
-            femalePlotElementPool = data[3];
-            mechanicsElementPool = data[4];
-
-            console.log('世界书生成器：所有数据池已成功加载。');
-        } catch (error) {
-            console.error('世界书生成器：加载数据池失败！', error);
-            if (toastr) {
-                toastr.error(
-                    '加载核心数据失败，请检查控制台获取更多信息。',
-                    '错误',
+                // 3.2 (核心) 明确告知用户需要手动刷新
+                toastr.success(
+                    `角色 "${charData.name}" 创建成功！请手动刷新页面以查看新角色。`,
+                    '操作成功',
+                    { timeOut: 10000 }, // 延长显示时间
                 );
+
+                // 对于手动流程，隐藏“创建”按钮
+                if (source === 'manual') {
+                    $('#create-char-button').hide();
+                }
+            } else {
+                throw new Error('服务器未返回新角色的ID。');
             }
+        } catch (error) {
+            console.error('角色创建流程失败:', error);
+            toastr.error(`操作失败: ${error.message}`);
+            // 重新抛出错误，以便上层调用者（如自动化流程）可以捕获它
+            throw error;
         }
     }
 
-    /**
-     * 新的、简化的更新检查器类
-     */
+    // -----------------------------------------------------------------
+    // 2. 更新检查器
+    // -----------------------------------------------------------------
     class WBGUpdater {
         constructor() {
-            this.owner = '1830488003';
+            this.owner = 'momo-desu';
             this.repo = 'world-book-generator';
             this.currentVersion = '';
             this.latestVersion = '';
             this.storageKey = 'wbg_auto_update_enabled';
-
-            this.elements = {
-                versionDisplay: null,
-                checkButton: null,
-                autoUpdateToggle: null,
-            };
+            this.elements = {};
         }
 
         async init() {
-            // 总是尝试获取UI元素，无论在哪个页面
-            this.elements.versionDisplay = document.getElementById(
-                'wbg-current-version',
-            );
-            this.elements.checkButton = document.getElementById(
-                'wbg-check-update-button',
-            );
-            this.elements.autoUpdateToggle = document.getElementById(
-                'wbg-auto-update-toggle',
-            );
-
-            // 加载本地版本号并显示
-            await this.loadManifest();
-
-            // 仅在设置页面绑定事件和加载设置
-            if (this.elements.checkButton && this.elements.autoUpdateToggle) {
-                this.setupEventListeners();
-                this.loadSettings();
-                if (this.elements.autoUpdateToggle.checked) {
-                    this.checkForUpdates(false); // 页面加载时静默检查
-                }
-            } else {
-                // 如果不在设置页面，但开启了自动更新，则静默检查
-                const autoUpdateEnabled =
-                    localStorage.getItem(this.storageKey) !== 'false';
-                if (autoUpdateEnabled) {
-                    this.checkForUpdates(false);
-                }
-            }
-        }
-
-        async loadManifest() {
             try {
-                const response = await fetch(
-                    `/${extensionFolderPath}/manifest.json?v=${new Date().getTime()}`,
-                );
+                const manifestUrl = `/${extensionFolderPath}/manifest.json?v=${Date.now()}`;
+                const response = await fetch(manifestUrl);
+                if (!response.ok) {
+                    throw new Error(`无法加载本地 manifest: ${response.statusText}`);
+                }
                 const manifest = await response.json();
                 this.currentVersion = manifest.version;
+
+                this.elements = {
+                    versionDisplay: document.getElementById('wbg-current-version'),
+                    checkButton: document.getElementById('wbg-check-update-button'),
+                    autoUpdateToggle: document.getElementById('wbg-auto-update-toggle'),
+                };
+
                 if (this.elements.versionDisplay) {
                     this.elements.versionDisplay.textContent = `v${this.currentVersion}`;
                 }
-            } catch (error) {
-                console.error('WBGUpdater: 加载 manifest.json 失败', error);
-                if (this.elements.versionDisplay) {
-                    this.elements.versionDisplay.textContent = 'v?.?.?';
+
+                this.loadSettings();
+                this.setupEventListeners();
+
+                if (this.elements.autoUpdateToggle.checked) {
+                    this.checkForUpdates(false);
                 }
+            } catch (error) {
+                console.error('WBGUpdater 初始化失败:', error);
+                if (toastr) toastr.error(`更新检查器初始化失败: ${error.message}`);
             }
         }
 
         setupEventListeners() {
-            this.elements.checkButton.addEventListener('click', () =>
-                this.checkForUpdates(true),
-            );
+            if (!this.elements.checkButton || !this.elements.autoUpdateToggle) return;
+
+            this.elements.checkButton.addEventListener('click', () => this.checkForUpdates(true));
             this.elements.autoUpdateToggle.addEventListener('change', (e) => {
                 localStorage.setItem(this.storageKey, e.target.checked);
                 if (e.target.checked) {
-                    if (toastr) {
-                        toastr.success('已开启自动更新检查。');
-                    }
+                    if (toastr) toastr.success('已开启自动更新检查。');
                     this.checkForUpdates(false);
                 } else {
-                    if (toastr) {
-                        toastr.info('已关闭自动更新检查。');
-                    }
+                    if (toastr) toastr.info('已关闭自动更新检查。');
                 }
             });
         }
 
         loadSettings() {
+            if (!this.elements.autoUpdateToggle) return;
             const autoUpdateEnabled = localStorage.getItem(this.storageKey);
-            this.elements.autoUpdateToggle.checked =
-                autoUpdateEnabled !== 'false';
+            this.elements.autoUpdateToggle.checked = autoUpdateEnabled !== 'false';
         }
 
         async checkForUpdates(manual = false) {
             if (manual) {
                 if (toastr) toastr.info('正在检查更新...');
                 this.elements.checkButton.disabled = true;
-                this.elements.checkButton.innerHTML =
-                    '<i class="fas fa-spinner fa-spin"></i> 检查中...';
+                this.elements.checkButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检查中...';
             }
             try {
-                // Fetch remote manifest from raw.githubusercontent.com
                 const response = await fetch(
-                    `https://raw.githubusercontent.com/${this.owner}/${
-                        this.repo
-                    }/main/manifest.json?v=${new Date().getTime()}`,
+                    `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/manifest.json?v=${new Date().getTime()}`,
                 );
                 if (!response.ok) {
-                    throw new Error(
-                        `从 Github 获取 manifest 失败: ${response.statusText}`,
-                    );
+                    throw new Error(`从 Github 获取 manifest 失败: ${response.statusText}`);
                 }
                 const remoteManifest = await response.json();
                 this.latestVersion = remoteManifest.version;
 
-                console.log(
-                    `[${extensionName}] 当前版本: ${this.currentVersion}, 最新版本: ${this.latestVersion}`,
-                );
+                console.log(`[${extensionName}] 当前版本: ${this.currentVersion}, 最新版本: ${this.latestVersion}`);
 
-                if (
-                    this.compareVersions(
-                        this.latestVersion,
-                        this.currentVersion,
-                    ) > 0
-                ) {
+                if (this.compareVersions(this.latestVersion, this.currentVersion) > 0) {
                     const releaseUrl = `https://github.com/${this.owner}/${this.repo}/`;
                     if (toastr) {
                         toastr.success(
                             `发现新版本 v${this.latestVersion}！点击这里前往Github仓库页面。`,
                             '更新提示',
                             {
-                                onclick: () =>
-                                    window.open(releaseUrl, '_blank'),
-                                timeOut: 0, // 永不自动消失
-                                extendedTimeOut: 0, // 鼠标悬停时也永不消失
+                                onclick: () => window.open(releaseUrl, '_blank'),
+                                timeOut: 0,
+                                extendedTimeOut: 0,
                             },
                         );
                     }
@@ -262,18 +261,13 @@ jQuery(async () => {
                 }
             } catch (error) {
                 console.error('WBGUpdater: 检查更新失败', error);
-                if (manual) {
-                    if (toastr) {
-                        toastr.error(
-                            `检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`,
-                        );
-                    }
+                if (manual && toastr) {
+                    toastr.error(`检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`);
                 }
             } finally {
                 if (manual) {
                     this.elements.checkButton.disabled = false;
-                    this.elements.checkButton.innerHTML =
-                        '<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新';
+                    this.elements.checkButton.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新';
                 }
             }
         }
@@ -589,7 +583,7 @@ jQuery(async () => {
                     .replace(/\n/g, '\\n') // 转义换行符
                     .replace(/\r/g, '\\r'); // 转义回车符
                 // 重构 "content": "..." 部分
-                return `"content": "${escapedContent}"`;
+                return `"${'content'}": "${escapedContent}"`;
             },
         );
 
@@ -721,13 +715,18 @@ jQuery(async () => {
             // 【强制命名】确保角色卡的名称与世界书名称完全一致
             characterData.name = bookName;
 
-            // 调用新的、正确的创建函数
-            await createCharacterWithWorldBook(characterData, bookName);
+            // 调用新的、正确的创建函数，并指明来源是'manual'
+            await createCharacterWithWorldBook(
+                characterData,
+                bookName,
+                null,
+                'manual',
+            );
         } catch (error) {
             console.error('创建角色卡失败:', error);
-            toastr.error(`创建角色卡失败: ${error.message}`);
+            // 错误消息已在 createCharacterWithWorldBook 中处理
         } finally {
-            // 无论成功失败，都让按钮可以再次点击
+            // 成功后按钮会被隐藏，失败后则恢复
             createButton.text('创建角色卡并绑定').prop('disabled', false);
         }
     };
@@ -1907,109 +1906,15 @@ jQuery(async () => {
         characterData.name = bookName;
         updateAutoGenStatus(`👍 AI已生成角色: ${characterData.name}`);
 
-        // 4. 【架构重构】通过新的API创建角色
-        await createCharacterWithWorldBook(characterData, bookName);
+        // 4. 【架构重构】通过新的API创建角色，并指明来源是'auto'
+        await createCharacterWithWorldBook(
+            characterData,
+            bookName,
+            null,
+            'auto',
+        );
     }
 
-    /**
-     * 【完整函数】从插件内部以编程方式创建角色卡，并绑定一个指定的世界书。
-     * @param {object} charData - 包含角色所有信息的对象（如name, description等）。
-     * @param {string} worldBookName - 要绑定的世界书的确切名称。传空字符串或null则不绑定。
-     * @param {File} [avatarFile] - (可选) 角色的头像文件对象。
-     */
-    async function createCharacterWithWorldBook(
-        charData,
-        worldBookName,
-        avatarFile = null,
-    ) {
-        // --- 1. 准备 FormData ---
-        console.log(
-            `正在创建角色 "${charData.name}" 并绑定世界书 "${worldBookName}"...`,
-        );
-        const formData = new FormData();
-
-        // 填充所有字段
-        formData.append('ch_name', charData.name || '未命名角色');
-        formData.append('description', charData.description || '');
-        formData.append('first_mes', charData.first_message || ''); // v22.1.1 修复
-        formData.append('personality', charData.personality || '');
-        formData.append('scenario', charData.scenario || '');
-        formData.append('creator_notes', charData.creator_notes || '');
-        formData.append('system_prompt', charData.system_prompt || '');
-        formData.append(
-            'post_history_instructions',
-            charData.post_history_instructions || '',
-        );
-        formData.append('fav', String(charData.is_favorite || false));
-        formData.append('tags', charData.tags || ''); // v22.0.0 新增
-
-        // 绑定世界书
-        if (worldBookName) {
-            formData.append('world', worldBookName);
-        }
-
-        // 添加头像
-        if (avatarFile) {
-            formData.append('avatar', avatarFile);
-        }
-
-        // --- 2. 提交数据到服务器 ---
-        const { getRequestHeaders } = SillyTavern.getContext();
-        const headers = getRequestHeaders();
-        delete headers['Content-Type'];
-
-        let newAvatarId = null;
-        try {
-            const response = await fetch('/api/characters/create', {
-                method: 'POST',
-                headers: headers,
-                body: formData,
-                cache: 'no-cache',
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`服务器错误: ${response.status} ${errorText}`);
-            }
-
-            newAvatarId = await response.text();
-            toastr.success(`角色 "${formData.get('ch_name')}" 创建成功！`);
-
-            // --- 3. 更新标签和UI ---
-            if (newAvatarId) {
-                // 3.1 更新标签全局索引 (v22.1.0 修复)
-                if (charData.tags) {
-                    await updateGlobalTagMapForCharacter(
-                        newAvatarId,
-                        charData.tags,
-                    );
-                }
-
-                // 3.2 刷新UI并选中新角色 (v22.1.2 修复)
-                const context = SillyTavern.getContext();
-                if (
-                    context &&
-                    typeof context.reloadCharacterList === 'function' &&
-                    typeof context.selectCharacter === 'function'
-                ) {
-                    await context.reloadCharacterList();
-                    context.selectCharacter(newAvatarId);
-                    toastr.info('UI已刷新，新角色卡已选中。');
-                } else {
-                    console.warn(
-                        '[插件] UI刷新函数 (reloadCharacterList/selectCharacter) 不可用，跳过自动刷新。',
-                    );
-                    toastr.warning(
-                        '角色已创建，但UI自动刷新失败。请手动刷新角色列表查看。',
-                    );
-                }
-            }
-        } catch (error) {
-            console.error('角色创建请求失败:', error);
-            toastr.error('角色创建失败，请查看控制台日志。');
-            // 出错时依然返回，避免阻塞
-        }
-    }
 
     async function handleContinue() {
         const selectedBook = String($('#existingBooksDropdown').val());
@@ -2066,6 +1971,58 @@ jQuery(async () => {
             toastr.error(`快速加载项目失败: ${error.message}`);
         }
     }
+
+    /**
+     * 【新增】并行加载所有外部数据池JSON文件。
+     * 使用Promise.allSettled确保即使某个文件加载失败，其他文件也能成功加载。
+     */
+    async function loadAllDataPools() {
+        const dataFiles = {
+            'world_elements.json': 'worldElementPool',
+            'detail_elements.json': 'detailElementPool',
+            'plot_elements.json': 'plotElementPool',
+            'female_plot_elements.json': 'femalePlotElementPool',
+            'mechanics_elements.json': 'mechanicsElementPool',
+        };
+
+        const promises = Object.keys(dataFiles).map(fileName => {
+            const url = `/${extensionFolderPath}/data/${fileName}?v=${Date.now()}`;
+            return $.getJSON(url)
+                .then(data => ({ status: 'fulfilled', value: data, key: dataFiles[fileName] }))
+                .catch(error => ({ status: 'rejected', reason: `Failed to load ${fileName}: ${error.statusText}`, key: dataFiles[fileName] }));
+        });
+
+        const results = await Promise.allSettled(promises);
+
+        results.forEach(result => {
+            if (result.status === 'fulfilled' && result.value.status === 'fulfilled') {
+                const key = result.value.key;
+                const data = result.value.value;
+                switch (key) {
+                    case 'worldElementPool':
+                        worldElementPool = data;
+                        break;
+                    case 'detailElementPool':
+                        detailElementPool = data;
+                        break;
+                    case 'plotElementPool':
+                        plotElementPool = data;
+                        break;
+                    case 'femalePlotElementPool':
+                        femalePlotElementPool = data;
+                        break;
+                    case 'mechanicsElementPool':
+                        mechanicsElementPool = data;
+                        break;
+                }
+            } else {
+                const reason = result.reason || (result.value && result.value.reason);
+                console.error(`[${extensionName}] ${reason}`);
+                if (toastr) toastr.warning(reason, '数据池加载部分失败');
+            }
+        });
+    }
+
 
     async function initializeExtension() {
         console.log(`[${extensionName}] 1. 开始初始化...`);
