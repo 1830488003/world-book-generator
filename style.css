@@ -203,6 +203,41 @@ body::-webkit-scrollbar {
     margin-bottom: 0; /* Remove individual margin if using gap */
 }
 
+/* --- 欢迎页底部控制区域 (新) --- */
+.wbg-section-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 15px 0;
+}
+
+#wbg-credits-display {
+    text-align: center;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+/* 确保下拉框也应用自定义样式 */
+#existingBooksDropdown {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f2f2f7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 30px;
+}
+
 /* 灵感激发区域 */
 .inspiration-controls {
     display: flex;
@@ -240,9 +275,16 @@ body::-webkit-scrollbar {
 
 /* 移动端适配 */
 @media (max-width: 600px) {
+    #wbg-popup-overlay {
+        align-items: flex-start; /* 垂直方向从顶部开始对齐 */
+        padding-top: 5vh; /* 增加一个5%视口高度的顶部内边距 */
+    }
+
     #wbg-popup.popup-content {
         width: 95%;
         padding: 15px;
+        max-height: 85vh; /* 调整最大高度以适应屏幕 */
+        margin-top: 0; /* 如果之前有margin，现在重置 */
     }
 
     #wbg-floating-button,
@@ -553,19 +595,7 @@ input:checked + .wbg-slider:before {
 }
 
 /* --- 充值功能样式 --- */
-.credits-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 6px;
-    margin-top: 15px;
-}
-
-.credits-container span {
-    font-weight: bold;
-}
+/* (旧的 .credits-container 样式已不再需要，被 #wbg-credits-display 替代) */
 
 /* 充值模态框 */
 .wbg-modal {
