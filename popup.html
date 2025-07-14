@@ -1,286 +1,662 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <title>一键做卡工具（自动生成角色卡+世界书）</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="style.css">
-</head>
-<body>
-    <div id="wbg-popup-overlay">
-        <div id="wbg-popup" class="popup-content">
-            <!-- 关闭按钮现在独立于header，便于绝对定位 -->
-            <div id="wbg-popup-close-container">
-                <span id="wbg-back-to-home-button" class="back-button" style="display: none;">< 返回主页</span>
-                <span id="wbg-popup-close-button" class="close-button">&times;</span>
-            </div>
-            <div class="wbg-header">
-                <h2>一键做卡工具</h2>
-            </div>
-            <div id="wbg-content-container">
-        <!-- 欢迎页面 -->
-            <div id="wbg-landing-page">
-                <h3>欢迎回来！</h3>
-                <p>请选择您的操作：</p>
-                <div class="wbg-button-group vertical">
-                    <button id="quickContinueButton" class="wbg-action-button wbg-primary" style="display: none; margin-bottom: 15px;">
-                        <i class="fa-solid fa-bolt"></i> 快速继续: <span></span>
-                    </button>
-                    <button id="startNewButton" class="wbg-action-button wbg-primary">创建世界书+角色卡 (手动版)</button>
-                    <button id="startAutoButton" class="wbg-action-button wbg-primary">创建世界书+角色卡 (自动版)</button>
-                    <div class="wbg-section-divider"></div>
-                    <div id="wbg-credits-display">
-                        <span>剩余次数: <strong id="wbg-credits-count">100</strong></span>
-                    </div>
-                    <button id="wbg-recharge-button" class="wbg-action-button wbg-primary">充值 (需要梯子)</button>
-                    <div class="wbg-section-divider"></div>
-                    <select id="existingBooksDropdown">
-                        <option value="">选择一个已有的世界书...</option>
-                    </select>
-                    <button id="continueButton" class="wbg-action-button wbg-primary">继续上次的工作</button>
+    <head>
+        <title>一键做卡工具（自动生成角色卡+世界书）</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" type="text/css" href="style.css" />
+    </head>
+    <body>
+        <div id="wbg-popup-overlay">
+            <div id="wbg-popup" class="popup-content">
+                <!-- 关闭按钮现在独立于header，便于绝对定位 -->
+                <div id="wbg-popup-close-container">
+                    <span
+                        id="wbg-back-to-home-button"
+                        class="back-button"
+                        style="display: none"
+                        >< 返回主页</span
+                    >
+                    <span id="wbg-popup-close-button" class="close-button"
+                        >&times;</span
+                    >
                 </div>
-            </div>
-
-            <!-- 自动化生成器页面 (默认隐藏) -->
-            <div id="wbg-auto-generator-page" style="display: none;">
-                <h3>创建世界书 (自动版)</h3>
-                <p>请输入一个核心创作要求，AI将全自动完成后续所有步骤。</p>
-                <div class="wbg-input-group">
-                    <label for="autoBookName">新世界书名称:</label>
-                    <input type="text" id="autoBookName" placeholder="为你的自动化世界命名">
+                <div class="wbg-header">
+                    <h2>一键做卡工具</h2>
                 </div>
-                <div class="wbg-input-group">
-                    <label>各阶段执行次数配置 (每阶段生成多少组内容):</label>
-                    <div id="wbg-auto-gen-counts" class="wbg-auto-gen-config-grid">
-                        <div class="wbg-config-item">
-                            <label for="stage1Count">阶段一 (基石):</label>
-                            <input type="number" id="stage1Count" class="wbg-small-input" value="1" min="1" max="10">
+                <div id="wbg-content-container">
+                    <!-- 欢迎页面 -->
+                    <div id="wbg-landing-page">
+                        <h3>欢迎回来！</h3>
+                        <p>请选择您的操作：</p>
+                        <div class="wbg-button-group vertical">
+                            <button
+                                id="quickContinueButton"
+                                class="wbg-action-button wbg-primary"
+                                style="display: none; margin-bottom: 15px"
+                            >
+                                <i class="fa-solid fa-bolt"></i> 快速继续:
+                                <span></span>
+                            </button>
+                            <button
+                                id="startNewButton"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                创建世界书+角色卡 (手动版)
+                            </button>
+                            <button
+                                id="startAutoButton"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                创建世界书+角色卡 (自动版)
+                            </button>
+                            <div class="wbg-section-divider"></div>
+                            <div id="wbg-credits-display">
+                                <span
+                                    >剩余次数:
+                                    <strong id="wbg-credits-count"
+                                        >100</strong
+                                    ></span
+                                >
+                            </div>
+                            <button
+                                id="wbg-recharge-button"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                充值 (需要梯子)
+                            </button>
+                            <div class="wbg-section-divider"></div>
+                            <select id="existingBooksDropdown">
+                                <option value="">
+                                    选择一个已有的世界书...
+                                </option>
+                            </select>
+                            <button
+                                id="continueButton"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                继续上次的工作
+                            </button>
                         </div>
-                        <div class="wbg-config-item">
-                            <label for="stage2Count">阶段二 (剧情):</label>
-                            <input type="number" id="stage2Count" class="wbg-small-input" value="1" min="1" max="10">
-                        </div>
-                        <div class="wbg-config-item">
-                            <label for="stage3Count">阶段三 (细节):</label>
-                            <input type="number" id="stage3Count" class="wbg-small-input" value="1" min="1" max="10">
-                        </div>
-                        <div class="wbg-config-item">
-                            <label for="stage4Count">阶段四 (机制):</label>
-                            <input type="number" id="stage4Count" class="wbg-small-input" value="1" min="1" max="10">
-                        </div>
-                    </div>
-                </div>
-                <div class="wbg-input-group">
-                    <label for="autoCoreTheme">核心创作要求:</label>
-                    <textarea id="autoCoreTheme" class="wbg-textarea" rows="4" placeholder="例如：一个融合了赛博朋克与中国神话的都市，名为“九龙机电城”"></textarea>
-                </div>
-                <div class="wbg-button-group">
-                    <button id="runAutoGenerationButton" class="wbg-action-button wbg-primary">开始全自动生成</button>
-                </div>
-                <div id="auto-gen-status" class="wbg-status-container" style="display: none;">
-                    <h4>生成进度:</h4>
-                    <ul id="auto-gen-status-list">
-                        <!-- 状态更新将由JS动态插入此处 -->
-                    </ul>
-                </div>
-
-                <!-- 新增：最终调试输出区域 -->
-                <div id="wbg-debug-output-container" class="wbg-input-group" style="display: none; margin-top: 15px;">
-                    <label for="wbg-debug-output" style="color: #F44336; font-weight: bold;">【最终调试】AI原始返回数据 (完整版):</label>
-                    <textarea id="wbg-debug-output" class="wbg-textarea" rows="10" readonly></textarea>
-                </div>
-                <div id="wbg-autogen-finished-buttons" class="wbg-button-group centered" style="display: none; margin-top: 20px;">
-                    <button id="wbg-autogen-back-to-home" class="wbg-action-button wbg-secondary">返回主页面</button>
-                    <button id="wbg-autogen-finish-task" class="wbg-action-button wbg-primary">完成并开始新任务</button>
-                </div>
-            </div>
-
-            <!-- 主生成器页面 (默认隐藏) -->
-            <div id="wbg-generator-page" style="display: none;">
-                <div class="wbg-input-group">
-                    <label for="bookName">世界书名称:</label>
-                    <input type="text" id="bookName" placeholder="为你的世界命名">
-                </div>
-
-                <!-- 阶段选择器 -->
-                <div id="wbg-stage-selector" class="wbg-button-group centered">
-                    <button class="stage-button" data-stage="1">阶段一: 基石</button>
-                    <button class="stage-button" data-stage="2">阶段二: 剧情</button>
-                    <button class="stage-button" data-stage="3">阶段三: 细节</button>
-                    <button class="stage-button" data-stage="4">阶段四: 机制</button>
-                    <button class="stage-button" data-stage="5">阶段五: 角色卡</button>
-                </div>
-
-        <!-- 阶段一：世界基石 -->
-        <div id="stage-1" class="wbg-stage active">
-            <h3>阶段一：世界基石生成</h3>
-            <div class="wbg-randomize-container">
-                <button id="randomizeAllButton" class="wbg-action-button wbg-secondary wbg-small-button">🎲 随机选择全部</button>
-            </div>
-            <details id="advanced-options-container">
-                <summary class="wbg-summary-as-button">高级设定选项 (点击展开/折叠)</summary>
-                <div id="advanced-options-content" class="wbg-advanced-options-grid">
-                    <!-- 高级选项的下拉菜单将由JS动态生成并插入此处 -->
-                </div>
-            </details>
-            <div class="wbg-input-group">
-                <label for="foundationElements">核心主题 (或自由输入):</label>
-                <textarea id="foundationElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了高级设定，这里可以作为补充说明。"></textarea>
-            </div>
-            <div class="wbg-input-group">
-                <label>AI生成内容 (审核):</label>
-                <textarea id="aiResponseTextArea-stage1" class="wbg-textarea" rows="8" readonly placeholder="AI生成的世界基石将显示在这里..."></textarea>
-            </div>
-            <div class="wbg-button-group">
-                <button id="generateFoundationButton" class="wbg-action-button wbg-primary">生成/补充内容</button>
-                <button id="uploadFoundationButton" class="wbg-action-button" disabled>上传至世界书</button>
-            </div>
-        </div>
-
-        <!-- 阶段二：剧情构思 -->
-        <div id="stage-2" class="wbg-stage">
-            <h3>阶段二：剧情构思与大纲</h3>
-            <div id="plot-channel-selector" class="wbg-button-group centered">
-                <button class="channel-button active" data-channel="male">男频创作</button>
-                <button class="channel-button" data-channel="female">女频创作</button>
-            </div>
-            <div class="wbg-randomize-container">
-                <button id="randomizePlotButton" class="wbg-action-button wbg-secondary wbg-small-button">🎲 随机选择全部</button>
-            </div>
-            <details id="plot-options-container">
-                <summary class="wbg-summary-as-button">剧情设定选项 (点击展开/折叠)</summary>
-                <div id="plot-options-content" class="wbg-advanced-options-grid">
-                    <!-- 剧情选项的下拉菜单将由JS动态生成并插入此处 -->
-                </div>
-            </details>
-            <div class="wbg-input-group">
-                <label for="plotElements">核心剧情元素 (或自由输入):</label>
-                <textarea id="plotElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了剧情设定，这里可以作为补充说明。"></textarea>
-            </div>
-            <div class="wbg-input-group">
-                <label>AI生成内容 (审核):</label>
-                <textarea id="aiResponseTextArea-stage2" class="wbg-textarea" rows="8" readonly placeholder="AI生成的剧情大纲将显示在这里..."></textarea>
-            </div>
-            <div class="wbg-button-group">
-                <button id="generateOutlineButton" class="wbg-action-button wbg-primary">生成/补充剧情</button>
-                <button id="uploadOutlineButton" class="wbg-action-button" disabled>上传至世界书</button>
-            </div>
-        </div>
-
-                <!-- 阶段三：细节填充 -->
-                <div id="stage-3" class="wbg-stage">
-                    <h3>阶段三：细节填充</h3>
-                    <div class="wbg-randomize-container">
-                        <button id="randomizeDetailButton" class="wbg-action-button wbg-secondary wbg-small-button">🎲 随机选择全部</button>
-                    </div>
-                    <details id="detail-options-container">
-                        <summary class="wbg-summary-as-button">细节深化选项 (点击展开/折叠)</summary>
-                        <div id="detail-options-content" class="wbg-advanced-options-grid">
-                            <!-- 细节选项的下拉菜单将由JS动态生成并插入此处 -->
-                        </div>
-                    </details>
-                    <div class="wbg-input-group">
-                        <label for="detailElements">核心主题 (或自由输入):</label>
-                        <textarea id="detailElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了细节深化选项，这里可以作为补充说明。"></textarea>
-                    </div>
-                    <div class="wbg-input-group">
-                        <label>AI生成内容 (审核):</label>
-                        <textarea id="aiResponseTextArea-stage3" class="wbg-textarea" rows="8" readonly placeholder="AI生成的细节内容将显示在这里..."></textarea>
-                    </div>
-                    <div class="wbg-button-group">
-                        <button id="generateDetailButton" class="wbg-action-button wbg-primary">生成/补充细节</button>
-                        <button id="uploadDetailButton" class="wbg-action-button" disabled>上传至世界书</button>
-                    </div>
-                </div>
-
-                <!-- 阶段四：游戏机制 -->
-                <div id="stage-4" class="wbg-stage">
-                    <h3>阶段四：游戏机制设计</h3>
-                    <div class="wbg-randomize-container">
-                        <button id="randomizeMechanicsButton" class="wbg-action-button wbg-secondary wbg-small-button">🎲 随机选择全部</button>
-                    </div>
-                    <details id="mechanics-options-container">
-                        <summary class="wbg-summary-as-button">游戏机制选项 (点击展开/折叠)</summary>
-                        <div id="mechanics-options-content" class="wbg-advanced-options-grid">
-                            <!-- 游戏机制选项的下拉菜单将由JS动态生成并插入此处 -->
-                        </div>
-                    </details>
-                    <div class="wbg-input-group">
-                        <label for="mechanicsElements">核心主题 (或自由输入):</label>
-                        <textarea id="mechanicsElements" class="wbg-textarea" rows="3" placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了游戏机制选项，这里可以作为补充说明。"></textarea>
-                    </div>
-                    <div class="wbg-input-group">
-                        <label>AI生成内容 (审核):</label>
-                        <textarea id="aiResponseTextArea-stage4" class="wbg-textarea" rows="8" readonly placeholder="AI设计的游戏机制将显示在这里..."></textarea>
-                    </div>
-                    <div class="wbg-button-group">
-                        <button id="generateMechanicsButton" class="wbg-action-button wbg-primary">设计/补充机制</button>
-                        <button id="uploadMechanicsButton" class="wbg-action-button" disabled>上传至世界书</button>
-                    </div>
-                </div>
-
-                <!-- 阶段五：角色卡生成 -->
-                <div id="stage-5" class="wbg-stage">
-                    <h3>阶段五: 生成配套角色卡</h3>
-                    <p class="wbg-desc">根据当前世界书的全部内容，为AI提供额外要求，生成一个或多个配套角色卡。</p>
-
-                    <div class="wbg-input-group">
-                        <label for="wbg-char-prompt-input">角色生成要求 (例如: "生成一个适合引导玩家的神秘向导NPC"):</label>
-                        <textarea id="wbg-char-prompt-input" class="wbg-textarea" rows="3"></textarea>
                     </div>
 
-                    <div class="wbg-input-group">
-                        <label for="wbg-char-output-area">AI生成的角色数据 (JSON格式 / 审核):</label>
-                        <textarea id="wbg-char-output-area" class="wbg-textarea" rows="10" readonly></textarea>
-                    </div>
-
-                    <div class="wbg-button-group">
-                        <button id="generate-char-button" class="wbg-action-button wbg-primary">生成角色数据</button>
-                        <button id="create-char-button" class="wbg-action-button" disabled>创建角色卡并绑定</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 新增：充值页面 (默认隐藏) -->
-            <div id="wbg-recharge-page" style="display: none;">
-                <h3>充值AI调用次数</h3>
-                <div id="wbg-recharge-step-1">
-                    <p>请选择充值档位：</p>
-                    <div class="wbg-tier-options">
-                        <button class="wbg-tier-button" data-tier="tier1" data-price="10" data-credits="100">10元 / 100次</button>
-                        <button class="wbg-tier-button" data-tier="tier2" data-price="20" data-credits="300">20元 / 300次</button>
-                        <button class="wbg-tier-button" data-tier="tier3" data-price="30" data-credits="500">30元 / 500次</button>
-                    </div>
-                </div>
-                <div id="wbg-recharge-step-2" style="display: none;">
-                    <p>请使用支付宝扫描下方二维码，支付 <strong id="wbg-recharge-price"></strong> 元。</p>
-                    <p class="wbg-important-note">重要：请务必在转账时，将下面的“支付口令”填写到【备注】中！</p>
-                    <div class="wbg-payment-qrcode-container">
-                        <img id="wbg-payment-qrcode" src="/scripts/extensions/third-party/world-book-generator/支付宝付款码.jpg" alt="支付宝收款码">
-                    </div>
-                    <div class="wbg-payment-code-container">
-                        <span>支付口令:</span>
-                        <strong id="wbg-payment-code"></strong>
-                    </div>
-                    <div id="wbg-payment-status"></div>
-                    
-                    <!-- 新增：用户确认支付区域 -->
-                    <div id="wbg-confirm-payment-section" style="margin-top: 15px;">
-                        <button id="wbg-confirm-payment-button" class="action-button primary">我已付款</button>
-                        <p id="wbg-payment-wait-message" style="display: none; font-size: 0.9em; color: #888; margin-top: 10px;">
-                            请耐心等待充值到账。如果长时间未到账，请联系客服QQ: 1830488003
+                    <!-- 自动化生成器页面 (默认隐藏) -->
+                    <div id="wbg-auto-generator-page" style="display: none">
+                        <h3>创建世界书 (自动版)</h3>
+                        <p>
+                            请输入一个核心创作要求，AI将全自动完成后续所有步骤。
                         </p>
+                        <div class="wbg-input-group">
+                            <label for="autoBookName">新世界书名称:</label>
+                            <input
+                                type="text"
+                                id="autoBookName"
+                                placeholder="为你的自动化世界命名"
+                            />
+                        </div>
+                        <div class="wbg-input-group">
+                            <label
+                                >各阶段执行次数配置
+                                (每阶段生成多少组内容):</label
+                            >
+                            <div
+                                id="wbg-auto-gen-counts"
+                                class="wbg-auto-gen-config-grid"
+                            >
+                                <div class="wbg-config-item">
+                                    <label for="stage1Count"
+                                        >阶段一 (基石):</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="stage1Count"
+                                        class="wbg-small-input"
+                                        value="1"
+                                        min="1"
+                                        max="10"
+                                    />
+                                </div>
+                                <div class="wbg-config-item">
+                                    <label for="stage2Count"
+                                        >阶段二 (剧情):</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="stage2Count"
+                                        class="wbg-small-input"
+                                        value="1"
+                                        min="1"
+                                        max="10"
+                                    />
+                                </div>
+                                <div class="wbg-config-item">
+                                    <label for="stage3Count"
+                                        >阶段三 (细节):</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="stage3Count"
+                                        class="wbg-small-input"
+                                        value="1"
+                                        min="1"
+                                        max="10"
+                                    />
+                                </div>
+                                <div class="wbg-config-item">
+                                    <label for="stage4Count"
+                                        >阶段四 (机制):</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="stage4Count"
+                                        class="wbg-small-input"
+                                        value="1"
+                                        min="1"
+                                        max="10"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wbg-input-group">
+                            <label for="autoCoreTheme">核心创作要求:</label>
+                            <textarea
+                                id="autoCoreTheme"
+                                class="wbg-textarea"
+                                rows="4"
+                                placeholder="例如：一个融合了赛博朋克与中国神话的都市，名为“九龙机电城”"
+                            ></textarea>
+                        </div>
+                        <div class="wbg-button-group">
+                            <button
+                                id="runAutoGenerationButton"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                开始全自动生成
+                            </button>
+                        </div>
+                        <div
+                            id="auto-gen-status"
+                            class="wbg-status-container"
+                            style="display: none"
+                        >
+                            <h4>生成进度:</h4>
+                            <ul id="auto-gen-status-list">
+                                <!-- 状态更新将由JS动态插入此处 -->
+                            </ul>
+                        </div>
+
+                        <!-- 新增：最终调试输出区域 -->
+                        <div
+                            id="wbg-debug-output-container"
+                            class="wbg-input-group"
+                            style="display: none; margin-top: 15px"
+                        >
+                            <label
+                                for="wbg-debug-output"
+                                style="color: #f44336; font-weight: bold"
+                                >【最终调试】AI原始返回数据 (完整版):</label
+                            >
+                            <textarea
+                                id="wbg-debug-output"
+                                class="wbg-textarea"
+                                rows="10"
+                                readonly
+                            ></textarea>
+                        </div>
+                        <div
+                            id="wbg-autogen-finished-buttons"
+                            class="wbg-button-group centered"
+                            style="display: none; margin-top: 20px"
+                        >
+                            <button
+                                id="wbg-autogen-back-to-home"
+                                class="wbg-action-button wbg-secondary"
+                            >
+                                返回主页面
+                            </button>
+                            <button
+                                id="wbg-autogen-finish-task"
+                                class="wbg-action-button wbg-primary"
+                            >
+                                完成并开始新任务
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 主生成器页面 (默认隐藏) -->
+                    <div id="wbg-generator-page" style="display: none">
+                        <div class="wbg-input-group">
+                            <label for="bookName">世界书名称:</label>
+                            <input
+                                type="text"
+                                id="bookName"
+                                placeholder="为你的世界命名"
+                            />
+                        </div>
+
+                        <!-- 阶段选择器 -->
+                        <div
+                            id="wbg-stage-selector"
+                            class="wbg-button-group centered"
+                        >
+                            <button class="stage-button" data-stage="1">
+                                阶段一: 基石
+                            </button>
+                            <button class="stage-button" data-stage="2">
+                                阶段二: 剧情
+                            </button>
+                            <button class="stage-button" data-stage="3">
+                                阶段三: 细节
+                            </button>
+                            <button class="stage-button" data-stage="4">
+                                阶段四: 机制
+                            </button>
+                            <button class="stage-button" data-stage="5">
+                                阶段五: 角色卡
+                            </button>
+                        </div>
+
+                        <!-- 阶段一：世界基石 -->
+                        <div id="stage-1" class="wbg-stage active">
+                            <h3>阶段一：世界基石生成</h3>
+                            <div class="wbg-randomize-container">
+                                <button
+                                    id="randomizeAllButton"
+                                    class="wbg-action-button wbg-secondary wbg-small-button"
+                                >
+                                    🎲 随机选择全部
+                                </button>
+                            </div>
+                            <details id="advanced-options-container">
+                                <summary class="wbg-summary-as-button">
+                                    高级设定选项 (点击展开/折叠)
+                                </summary>
+                                <div
+                                    id="advanced-options-content"
+                                    class="wbg-advanced-options-grid"
+                                >
+                                    <!-- 高级选项的下拉菜单将由JS动态生成并插入此处 -->
+                                </div>
+                            </details>
+                            <div class="wbg-input-group">
+                                <label for="foundationElements"
+                                    >核心主题 (或自由输入):</label
+                                >
+                                <textarea
+                                    id="foundationElements"
+                                    class="wbg-textarea"
+                                    rows="3"
+                                    placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了高级设定，这里可以作为补充说明。"
+                                ></textarea>
+                            </div>
+                            <div class="wbg-input-group">
+                                <label>AI生成内容 (审核):</label>
+                                <textarea
+                                    id="aiResponseTextArea-stage1"
+                                    class="wbg-textarea"
+                                    rows="8"
+                                    readonly
+                                    placeholder="AI生成的世界基石将显示在这里..."
+                                ></textarea>
+                            </div>
+                            <div class="wbg-button-group">
+                                <button
+                                    id="generateFoundationButton"
+                                    class="wbg-action-button wbg-primary"
+                                >
+                                    生成/补充内容
+                                </button>
+                                <button
+                                    id="uploadFoundationButton"
+                                    class="wbg-action-button"
+                                    disabled
+                                >
+                                    上传至世界书
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 阶段二：剧情构思 -->
+                        <div id="stage-2" class="wbg-stage">
+                            <h3>阶段二：剧情构思与大纲</h3>
+                            <div
+                                id="plot-channel-selector"
+                                class="wbg-button-group centered"
+                            >
+                                <button
+                                    class="channel-button active"
+                                    data-channel="male"
+                                >
+                                    男频创作
+                                </button>
+                                <button
+                                    class="channel-button"
+                                    data-channel="female"
+                                >
+                                    女频创作
+                                </button>
+                            </div>
+                            <div class="wbg-randomize-container">
+                                <button
+                                    id="randomizePlotButton"
+                                    class="wbg-action-button wbg-secondary wbg-small-button"
+                                >
+                                    🎲 随机选择全部
+                                </button>
+                            </div>
+                            <details id="plot-options-container">
+                                <summary class="wbg-summary-as-button">
+                                    剧情设定选项 (点击展开/折叠)
+                                </summary>
+                                <div
+                                    id="plot-options-content"
+                                    class="wbg-advanced-options-grid"
+                                >
+                                    <!-- 剧情选项的下拉菜单将由JS动态生成并插入此处 -->
+                                </div>
+                            </details>
+                            <div class="wbg-input-group">
+                                <label for="plotElements"
+                                    >核心剧情元素 (或自由输入):</label
+                                >
+                                <textarea
+                                    id="plotElements"
+                                    class="wbg-textarea"
+                                    rows="3"
+                                    placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了剧情设定，这里可以作为补充说明。"
+                                ></textarea>
+                            </div>
+                            <div class="wbg-input-group">
+                                <label>AI生成内容 (审核):</label>
+                                <textarea
+                                    id="aiResponseTextArea-stage2"
+                                    class="wbg-textarea"
+                                    rows="8"
+                                    readonly
+                                    placeholder="AI生成的剧情大纲将显示在这里..."
+                                ></textarea>
+                            </div>
+                            <div class="wbg-button-group">
+                                <button
+                                    id="generateOutlineButton"
+                                    class="wbg-action-button wbg-primary"
+                                >
+                                    生成/补充剧情
+                                </button>
+                                <button
+                                    id="uploadOutlineButton"
+                                    class="wbg-action-button"
+                                    disabled
+                                >
+                                    上传至世界书
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 阶段三：细节填充 -->
+                        <div id="stage-3" class="wbg-stage">
+                            <h3>阶段三：细节填充</h3>
+                            <div class="wbg-randomize-container">
+                                <button
+                                    id="randomizeDetailButton"
+                                    class="wbg-action-button wbg-secondary wbg-small-button"
+                                >
+                                    🎲 随机选择全部
+                                </button>
+                            </div>
+                            <details id="detail-options-container">
+                                <summary class="wbg-summary-as-button">
+                                    细节深化选项 (点击展开/折叠)
+                                </summary>
+                                <div
+                                    id="detail-options-content"
+                                    class="wbg-advanced-options-grid"
+                                >
+                                    <!-- 细节选项的下拉菜单将由JS动态生成并插入此处 -->
+                                </div>
+                            </details>
+                            <div class="wbg-input-group">
+                                <label for="detailElements"
+                                    >核心主题 (或自由输入):</label
+                                >
+                                <textarea
+                                    id="detailElements"
+                                    class="wbg-textarea"
+                                    rows="3"
+                                    placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了细节深化选项，这里可以作为补充说明。"
+                                ></textarea>
+                            </div>
+                            <div class="wbg-input-group">
+                                <label>AI生成内容 (审核):</label>
+                                <textarea
+                                    id="aiResponseTextArea-stage3"
+                                    class="wbg-textarea"
+                                    rows="8"
+                                    readonly
+                                    placeholder="AI生成的细节内容将显示在这里..."
+                                ></textarea>
+                            </div>
+                            <div class="wbg-button-group">
+                                <button
+                                    id="generateDetailButton"
+                                    class="wbg-action-button wbg-primary"
+                                >
+                                    生成/补充细节
+                                </button>
+                                <button
+                                    id="uploadDetailButton"
+                                    class="wbg-action-button"
+                                    disabled
+                                >
+                                    上传至世界书
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 阶段四：游戏机制 -->
+                        <div id="stage-4" class="wbg-stage">
+                            <h3>阶段四：游戏机制设计</h3>
+                            <div class="wbg-randomize-container">
+                                <button
+                                    id="randomizeMechanicsButton"
+                                    class="wbg-action-button wbg-secondary wbg-small-button"
+                                >
+                                    🎲 随机选择全部
+                                </button>
+                            </div>
+                            <details id="mechanics-options-container">
+                                <summary class="wbg-summary-as-button">
+                                    游戏机制选项 (点击展开/折叠)
+                                </summary>
+                                <div
+                                    id="mechanics-options-content"
+                                    class="wbg-advanced-options-grid"
+                                >
+                                    <!-- 游戏机制选项的下拉菜单将由JS动态生成并插入此处 -->
+                                </div>
+                            </details>
+                            <div class="wbg-input-group">
+                                <label for="mechanicsElements"
+                                    >核心主题 (或自由输入):</label
+                                >
+                                <textarea
+                                    id="mechanicsElements"
+                                    class="wbg-textarea"
+                                    rows="3"
+                                    placeholder="您可以在此自由发挥，输入任何灵感。如果上方选择了游戏机制选项，这里可以作为补充说明。"
+                                ></textarea>
+                            </div>
+                            <div class="wbg-input-group">
+                                <label>AI生成内容 (审核):</label>
+                                <textarea
+                                    id="aiResponseTextArea-stage4"
+                                    class="wbg-textarea"
+                                    rows="8"
+                                    readonly
+                                    placeholder="AI设计的游戏机制将显示在这里..."
+                                ></textarea>
+                            </div>
+                            <div class="wbg-button-group">
+                                <button
+                                    id="generateMechanicsButton"
+                                    class="wbg-action-button wbg-primary"
+                                >
+                                    设计/补充机制
+                                </button>
+                                <button
+                                    id="uploadMechanicsButton"
+                                    class="wbg-action-button"
+                                    disabled
+                                >
+                                    上传至世界书
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 阶段五：角色卡生成 -->
+                        <div id="stage-5" class="wbg-stage">
+                            <h3>阶段五: 生成配套角色卡</h3>
+                            <p class="wbg-desc">
+                                根据当前世界书的全部内容，为AI提供额外要求，生成一个或多个配套角色卡。
+                            </p>
+
+                            <div class="wbg-input-group">
+                                <label for="wbg-char-prompt-input"
+                                    >角色生成要求 (例如:
+                                    "生成一个适合引导玩家的神秘向导NPC"):</label
+                                >
+                                <textarea
+                                    id="wbg-char-prompt-input"
+                                    class="wbg-textarea"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
+                            <div class="wbg-input-group">
+                                <label for="wbg-char-output-area"
+                                    >AI生成的角色数据 (JSON格式 / 审核):</label
+                                >
+                                <textarea
+                                    id="wbg-char-output-area"
+                                    class="wbg-textarea"
+                                    rows="10"
+                                    readonly
+                                ></textarea>
+                            </div>
+
+                            <div class="wbg-button-group">
+                                <button
+                                    id="generate-char-button"
+                                    class="wbg-action-button wbg-primary"
+                                >
+                                    生成角色数据
+                                </button>
+                                <button
+                                    id="create-char-button"
+                                    class="wbg-action-button"
+                                    disabled
+                                >
+                                    创建角色卡并绑定
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 这个是 stage-5 的闭合标签 -->
+                </div>
+                <!-- 这个是 wbg-generator-page 的闭合标签，之前缺失了 -->
+
+                <!-- 新增：充值页面 (默认隐藏) -->
+                <div id="wbg-recharge-page" style="display: none">
+                    <h3>充值AI调用次数</h3>
+                    <div id="wbg-recharge-step-1">
+                        <p>请选择充值档位：</p>
+                        <div class="wbg-tier-options">
+                            <button
+                                class="wbg-tier-button"
+                                data-tier="tier1"
+                                data-price="10"
+                                data-credits="100"
+                            >
+                                10元 / 100次
+                            </button>
+                            <button
+                                class="wbg-tier-button"
+                                data-tier="tier2"
+                                data-price="20"
+                                data-credits="300"
+                            >
+                                20元 / 300次
+                            </button>
+                            <button
+                                class="wbg-tier-button"
+                                data-tier="tier3"
+                                data-price="30"
+                                data-credits="500"
+                            >
+                                30元 / 500次
+                            </button>
+                        </div>
+                    </div>
+                    <div id="wbg-recharge-step-2" style="display: none">
+                        <p>
+                            请使用支付宝扫描下方二维码，支付
+                            <strong id="wbg-recharge-price"></strong> 元。
+                        </p>
+                        <p class="wbg-important-note">
+                            重要：请务必在转账时，将下面的“支付口令”填写到【备注】中！
+                        </p>
+                        <div class="wbg-payment-qrcode-container">
+                            <img
+                                id="wbg-payment-qrcode"
+                                src="/scripts/extensions/third-party/world-book-generator/支付宝付款码.jpg"
+                                alt="支付宝收款码"
+                            />
+                        </div>
+                        <div class="wbg-payment-code-container">
+                            <span>支付口令:</span>
+                            <strong id="wbg-payment-code"></strong>
+                        </div>
+                        <div id="wbg-payment-status"></div>
+
+                        <!-- 新增：用户确认支付区域 -->
+                        <div
+                            id="wbg-confirm-payment-section"
+                            style="margin-top: 15px"
+                        >
+                            <button
+                                id="wbg-confirm-payment-button"
+                                class="action-button primary"
+                            >
+                                我已付款
+                            </button>
+                            <p
+                                id="wbg-payment-wait-message"
+                                style="
+                                    display: none;
+                                    font-size: 0.9em;
+                                    color: #888;
+                                    margin-top: 10px;
+                                "
+                            >
+                                请耐心等待充值到账。如果长时间未到账，请联系客服QQ:
+                                1830488003
+                            </p>
+                        </div>
+                    </div>
+                    <div class="wbg-button-group" style="margin-top: 20px">
+                        <button
+                            id="wbg-recharge-back-button"
+                            class="action-button secondary"
+                        >
+                            返回
+                        </button>
                     </div>
                 </div>
-                <div class="wbg-button-group" style="margin-top: 20px;">
-                    <button id="wbg-recharge-back-button" class="action-button secondary">返回</button>
+
+                <div class="wbg-footer">
+                    <p>SillyTavern 一键做卡工具</p>
                 </div>
             </div>
-
-            <div class="wbg-footer">
-                <p>SillyTavern 一键做卡工具</p>
-            </div>
         </div>
-    </div>
-    <!-- 脚本将在SillyTavern环境中由index.js动态加载 -->
-</body>
+        <!-- 脚本将在SillyTavern环境中由index.js动态加载 -->
+    </body>
 </html>

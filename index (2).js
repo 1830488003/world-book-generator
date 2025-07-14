@@ -2548,7 +2548,9 @@ jQuery(async () => {
 
                     creditManager.add(data.credits);
 
-                    this.statusElement.text('充值成功！').css('color', '#4CAF50');
+                    this.statusElement
+                        .text('充值成功！')
+                        .css('color', '#4CAF50');
 
                     setTimeout(() => {
                         this.hideModal();

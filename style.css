@@ -1,778 +1,778 @@
 /* 基础样式 */
 :root {
-  --primary-bg: #2c2c2e;
-  --secondary-bg: #3a3a3c;
-  --text-color: #f2f2f7;
-  --accent-color: #0a84ff;
-  --accent-color-rgb: 10, 132, 255; /* Added for box-shadow */
-  --border-color: #48484a;
-  --button-hover-bg: #4a4a4c;
-  --primary-button-bg: #0a84ff;
-  --primary-button-hover-bg: #007aff;
+    --primary-bg: #2c2c2e;
+    --secondary-bg: #3a3a3c;
+    --text-color: #f2f2f7;
+    --accent-color: #0a84ff;
+    --accent-color-rgb: 10, 132, 255; /* Added for box-shadow */
+    --border-color: #48484a;
+    --button-hover-bg: #4a4a4c;
+    --primary-button-bg: #0a84ff;
+    --primary-button-hover-bg: #007aff;
 }
 
 /* 浮动按钮 */
 #wbg-floating-button, /* 兼容旧版ID */
 #wbg-fab {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  background-color: #2c2c2e; /* 黑底 */
-  color: #a991d4; /* 紫色图标 */
-  border: 1px solid #444; /* 添加边框以匹配风格 */
-  border-radius: 50%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  font-size: 24px;
-  cursor: grab; /* 初始光标样式，提示可拖动 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999999999;
-  user-select: none; /* 防止拖动时选中文本 */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #2c2c2e; /* 黑底 */
+    color: #a991d4; /* 紫色图标 */
+    border: 1px solid #444; /* 添加边框以匹配风格 */
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 24px;
+    cursor: grab; /* 初始光标样式，提示可拖动 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999999999;
+    user-select: none; /* 防止拖动时选中文本 */
 }
 
 /* 弹窗遮罩 */
 #wbg-popup-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1001;
-  justify-content: center;
-  align-items: center; /* 默认桌面端居中 */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center; /* 默认桌面端居中 */
 }
 
 .wbg-is-visible {
-  display: flex !important;
+    display: flex !important;
 }
 
 /* 插件内部容器隐藏滚动条 */
 #wbg-content-container {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
 }
 
 #wbg-content-container::-webkit-scrollbar {
-  display: none; /* Safari, Chrome, Opera */
+    display: none; /* Safari, Chrome, Opera */
 }
 
 /* 弹窗内容 */
 #wbg-popup.popup-content {
-  /* --- 自包含主题变量 --- */
-  --primary-bg: #2c2c2e;
-  --secondary-bg: #3a3a3c;
-  --text-color: #f2f2f7;
-  --accent-color: #0a84ff;
-  --accent-color-rgb: 10, 132, 255;
-  --border-color: #48484a;
-  --button-hover-bg: #4a4a4c;
-  --primary-button-bg: #0a84ff;
-  --primary-button-hover-bg: #007aff;
-  /* --- End of theme variables --- */
+    /* --- 自包含主题变量 --- */
+    --primary-bg: #2c2c2e;
+    --secondary-bg: #3a3a3c;
+    --text-color: #f2f2f7;
+    --accent-color: #0a84ff;
+    --accent-color-rgb: 10, 132, 255;
+    --border-color: #48484a;
+    --button-hover-bg: #4a4a4c;
+    --primary-button-bg: #0a84ff;
+    --primary-button-hover-bg: #007aff;
+    /* --- End of theme variables --- */
 
-  position: relative;
-  background-color: var(--primary-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='10' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  color: var(--text-color);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  width: 80vw;
-  max-width: 1200px;
-  max-height: 90vh;
-  box-sizing: border-box;
-  border: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
+    position: relative;
+    background-color: var(--primary-bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='10' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    color: var(--text-color);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 80vw;
+    max-width: 1200px;
+    max-height: 90vh;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
 }
 
 /* 关闭按钮容器 */
 #wbg-popup-close-container {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  z-index: 20;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    z-index: 20;
 }
 
 #wbg-popup .close-button {
-  font-size: 28px;
-  font-weight: bold;
-  color: #aaa;
-  cursor: pointer;
-  transition: color 0.3s;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.3s;
 }
 
 #wbg-popup .back-button {
-  font-size: 16px;
-  color: #aaa;
-  cursor: pointer;
-  transition: color 0.3s;
-  margin-right: 15px;
-  line-height: 28px; /* 与关闭按钮垂直对齐 */
-  vertical-align: middle;
+    font-size: 16px;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.3s;
+    margin-right: 15px;
+    line-height: 28px; /* 与关闭按钮垂直对齐 */
+    vertical-align: middle;
 }
 
 #wbg-popup .back-button:hover,
 #wbg-popup .close-button:hover {
-  color: var(--accent-color);
+    color: var(--accent-color);
 }
 
 /* 内容容器，使其可滚动 */
 #wbg-content-container {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding-right: 10px;
-  margin-right: -10px;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-right: -10px;
 }
 
 .wbg-header {
-  position: sticky;
-  top: 0;
-  background-color: var(--primary-bg);
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border-color);
-  margin: -20px -20px 20px -20px;
-  height: 60px;
-  flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background-color: var(--primary-bg);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin: -20px -20px 20px -20px;
+    height: 60px;
+    flex-shrink: 0;
 }
 
 .wbg-header h2 {
-  margin: 0;
-  color: var(--accent-color);
+    margin: 0;
+    color: var(--accent-color);
 }
 
 /* 按钮样式 */
 .wbg-action-button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  transition: background-color 0.2s;
-  font-weight: bold;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    transition: background-color 0.2s;
+    font-weight: bold;
 }
 
 .wbg-action-button:hover {
-  background-color: var(--button-hover-bg);
+    background-color: var(--button-hover-bg);
 }
 
 .wbg-action-button.wbg-primary {
-  background-color: var(--primary-button-bg);
-  color: white;
-  width: 100%;
-  font-size: 16px;
+    background-color: var(--primary-button-bg);
+    color: white;
+    width: 100%;
+    font-size: 16px;
 }
 
 .wbg-action-button.wbg-primary:hover {
-  background-color: var(--primary-button-hover-bg);
+    background-color: var(--primary-button-hover-bg);
 }
 
 .wbg-button-group {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
 }
 
 .wbg-button-group.vertical {
-  flex-direction: column;
+    flex-direction: column;
 }
 
 .wbg-button-group.vertical .wbg-action-button {
-  width: 100%;
-  margin-bottom: 0;
+    width: 100%;
+    margin-bottom: 0;
 }
 
 /* --- 移动端适配：采纳用户建议，确保安全显示 --- */
 @media (max-width: 600px) {
-  #wbg-popup-overlay {
-    align-items: flex-start; /* 让弹窗从顶部开始对齐 */
-  }
+    #wbg-popup-overlay {
+        align-items: flex-start; /* 让弹窗从顶部开始对齐 */
+    }
 
-  #wbg-popup.popup-content {
-    width: 95vw;
-    max-height: 85vh; /* 严格限制最大高度，确保不会超出屏幕 */
-    margin-top: 5vh; /* 与屏幕顶部留出安全距离 */
-  }
+    #wbg-popup.popup-content {
+        width: 95vw;
+        max-height: 85vh; /* 严格限制最大高度，确保不会超出屏幕 */
+        margin-top: 5vh; /* 与屏幕顶部留出安全距离 */
+    }
 
-  .wbg-modal.wbg-is-visible {
-    align-items: flex-start; /* 移动端顶部对齐 */
-  }
+    .wbg-modal.wbg-is-visible {
+        align-items: flex-start; /* 移动端顶部对齐 */
+    }
 
-  .wbg-modal-content {
-    margin-top: 10vh; /* 移动端增加上边距 */
-  }
+    .wbg-modal-content {
+        margin-top: 10vh; /* 移动端增加上边距 */
+    }
 }
 
 /* 阶段样式 */
 .wbg-stage {
-  display: none;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 15px;
-  margin-top: 20px;
-  background-color: var(--secondary-bg);
+    display: none;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: var(--secondary-bg);
 }
 
 .wbg-stage.active {
-  display: block;
+    display: block;
 }
 
 .wbg-stage h3 {
-  margin-top: 0;
-  border-bottom: 2px solid var(--accent-color);
-  padding-bottom: 10px;
-  margin-bottom: 15px;
+    margin-top: 0;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 /* 输入组 */
 .wbg-input-group {
-  margin-bottom: 15px;
+    margin-bottom: 15px;
 }
 
 .wbg-input-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
 }
 
 #wbg-popup .wbg-input-group input[type='text'],
 #wbg-popup .wbg-input-group select,
 #wbg-popup .wbg-textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background-color: var(--primary-bg);
-  color: var(--text-color);
-  box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
 }
 
 /* 按钮样式 (已修复) */
 .wbg-action-button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  transition: background-color 0.2s;
-  font-weight: bold;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    transition: background-color 0.2s;
+    font-weight: bold;
 }
 
 .wbg-action-button:hover {
-  background-color: var(--button-hover-bg);
+    background-color: var(--button-hover-bg);
 }
 
 .wbg-action-button.wbg-primary {
-  background-color: var(--primary-button-bg);
-  color: white;
-  width: 100%;
-  font-size: 16px;
+    background-color: var(--primary-button-bg);
+    color: white;
+    width: 100%;
+    font-size: 16px;
 }
 
 .wbg-action-button.wbg-primary:hover {
-  background-color: var(--primary-button-hover-bg);
+    background-color: var(--primary-button-hover-bg);
 }
 
 .wbg-button-group {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
 }
 
 .wbg-button-group.vertical {
-  flex-direction: column;
+    flex-direction: column;
 }
 
 .wbg-button-group.vertical .wbg-action-button {
-  width: 100%;
-  margin-bottom: 0;
+    width: 100%;
+    margin-bottom: 0;
 }
 
 /* --- 欢迎页底部控制区域 (新) --- */
 .wbg-section-divider {
-  height: 1px;
-  background-color: var(--border-color);
-  margin: 15px 0;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 15px 0;
 }
 
 #wbg-credits-display {
-  text-align: center;
-  padding: 8px;
-  margin-bottom: 10px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-  font-weight: bold;
+    text-align: center;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    font-weight: bold;
 }
 
 /* 确保下拉框也应用自定义样式 */
 #existingBooksDropdown {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f2f2f7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.7rem center;
-  background-size: 1em;
-  padding-right: 30px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f2f2f7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 30px;
 }
 
 /* 灵感激发区域 */
 .inspiration-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
 }
 
 .wbg-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 5px;
-  border: 1px dashed var(--border-color);
-  border-radius: 6px;
-  min-height: 38px;
-  flex-grow: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 5px;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    min-height: 38px;
+    flex-grow: 1;
 }
 
 .wbg-tag {
-  background-color: var(--accent-color);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 14px;
+    background-color: var(--accent-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
 }
 
 /* 页脚 */
 .wbg-footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 12px;
-  color: #888;
-  flex-shrink: 0;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: #888;
+    flex-shrink: 0;
 }
 
 /* --- 高级设定选项 UI --- */
 .wbg-randomize-container {
-  text-align: center;
-  margin-bottom: 10px;
+    text-align: center;
+    margin-bottom: 10px;
 }
 
 /* 为随机按钮特别设置蓝底 */
 .wbg-randomize-container .wbg-action-button {
-  background-color: var(--accent-color);
-  color: white;
-  border: 1px solid var(--primary-button-hover-bg);
+    background-color: var(--accent-color);
+    color: white;
+    border: 1px solid var(--primary-button-hover-bg);
 }
 
 .wbg-randomize-container .wbg-action-button:hover {
-  background-color: var(--primary-button-hover-bg);
+    background-color: var(--primary-button-hover-bg);
 }
 
 #wbg-popup details {
-  margin-bottom: 15px;
+    margin-bottom: 15px;
 }
 
 #wbg-popup .wbg-summary-as-button {
-  display: inline-block;
-  padding: 8px 15px;
-  background-color: #4a4a4a;
-  color: white;
-  border: 1px solid #666;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 100%;
-  text-align: left;
-  list-style: none;
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #4a4a4a;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    text-align: left;
+    list-style: none;
 }
 
 .wbg-summary-as-button::-webkit-details-marker {
-  display: none;
+    display: none;
 }
 
 .wbg-summary-as-button:hover {
-  background-color: #5a5a5a;
+    background-color: #5a5a5a;
 }
 
 .wbg-summary-as-button::before {
-  content: '▶';
-  display: inline-block;
-  margin-right: 8px;
-  transition: transform 0.2s;
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s;
 }
 
 #wbg-popup details[open] > .wbg-summary-as-button::before {
-  transform: rotate(90deg);
+    transform: rotate(90deg);
 }
 
 .wbg-small-button {
-  padding: 8px 12px;
-  font-size: 0.9em;
-  flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    flex-shrink: 0;
 }
 
 .wbg-advanced-options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 15px;
-  padding: 15px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 1px solid #444;
-  border-top: none;
-  border-radius: 0 0 5px 5px;
-  margin-top: -1px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    margin-top: -1px;
 }
 
 .wbg-advanced-option-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 #plot-options-content,
 #detail-options-content,
 #mechanics-options-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 15px;
-  padding: 15px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 1px solid #444;
-  border-top: none;
-  border-radius: 0 0 5px 5px;
-  margin-top: -1px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    margin-top: -1px;
 }
 
 .wbg-advanced-option-item label {
-  font-size: 0.95em;
-  color: #ddd;
-  font-weight: bold;
+    font-size: 0.95em;
+    color: #ddd;
+    font-weight: bold;
 }
 
 #wbg-popup .wbg-advanced-option-item select {
-  width: 100%;
-  padding: 6px;
-  background-color: #333;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 4px;
+    width: 100%;
+    padding: 6px;
+    background-color: #333;
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 4px;
 }
 
 /* --- Stage Selector --- */
 .wbg-button-group.centered {
-  justify-content: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
 }
 
 .stage-button {
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  padding: 8px 15px;
-  margin: 0 5px;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: all 0.3s ease;
-  font-size: 0.9em;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
 }
 
 .stage-button:hover {
-  background-color: var(--button-hover-bg);
-  border-color: var(--accent-color);
+    background-color: var(--button-hover-bg);
+    border-color: var(--accent-color);
 }
 
 .stage-button.active {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
-  transform: translateY(-2px);
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
+    transform: translateY(-2px);
 }
 
 .channel-button {
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  padding: 8px 15px;
-  margin: 0 5px;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: all 0.3s ease;
-  font-size: 0.9em;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
 }
 
 .channel-button:hover {
-  background-color: var(--button-hover-bg);
-  border-color: var(--accent-color);
+    background-color: var(--button-hover-bg);
+    border-color: var(--accent-color);
 }
 
 .channel-button.active {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
-  transform: translateY(-2px);
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.5);
+    transform: translateY(-2px);
 }
 
 /* Settings Page - Update Manager Styles */
 .wbg-updater-body .wbg-version-info,
 .wbg-updater-body .wbg-auto-update-toggle-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
 }
 
 .wbg-updater-body .wbg-auto-update-toggle-container {
-  border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
 }
 
 .wbg-version-info span,
 .wbg-auto-update-toggle-container label {
-  font-size: 1em;
-  color: var(--text-color);
+    font-size: 1em;
+    color: var(--text-color);
 }
 
 .wbg-update-button {
-  background-color: #3c3c3e;
-  border: 1px solid #545456;
-  color: var(--text-color);
-  border-radius: 5px;
-  padding: 5px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 50px;
-  font-size: 12px;
-  line-height: 1.2;
-  transition: background-color 0.2s;
+    background-color: #3c3c3e;
+    border: 1px solid #545456;
+    color: var(--text-color);
+    border-radius: 5px;
+    padding: 5px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 50px;
+    font-size: 12px;
+    line-height: 1.2;
+    transition: background-color 0.2s;
 }
 
 .wbg-update-button:hover {
-  background-color: #4a4a4c;
+    background-color: #4a4a4c;
 }
 
 .wbg-update-button i {
-  font-size: 20px;
-  margin-bottom: 4px;
+    font-size: 20px;
+    margin-bottom: 4px;
 }
 
 /* Modern Toggle Switch */
 .wbg-toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 28px;
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
 }
 
 .wbg-toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .wbg-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #3a3a3c;
-  border: 1px solid #48484a;
-  transition: 0.4s;
-  border-radius: 28px;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #3a3a3c;
+    border: 1px solid #48484a;
+    transition: 0.4s;
+    border-radius: 28px;
 }
 
 .wbg-slider:before {
-  position: absolute;
-  content: '';
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+    position: absolute;
+    content: '';
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
 }
 
 input:checked + .wbg-slider {
-  background-color: var(--accent-color);
+    background-color: var(--accent-color);
 }
 
 input:focus + .wbg-slider {
-  box-shadow: 0 0 1px var(--accent-color);
+    box-shadow: 0 0 1px var(--accent-color);
 }
 
 input:checked + .wbg-slider:before {
-  transform: translateX(22px);
+    transform: translateX(22px);
 }
 
 /* 自动化生成 - 次数配置样式 */
 .auto-gen-config-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 15px;
-  padding: 10px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 1px solid #444;
-  border-radius: 5px;
-  margin-top: 5px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid #444;
+    border-radius: 5px;
+    margin-top: 5px;
 }
 
 .wbg-config-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .wbg-config-item label {
-  font-size: 0.9em;
-  color: #ccc;
-  font-weight: normal;
+    font-size: 0.9em;
+    color: #ccc;
+    font-weight: normal;
 }
 
 .wbg-small-input {
-  width: 100%;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background-color: var(--primary-bg);
-  color: var(--text-color);
-  box-sizing: border-box;
-  text-align: center;
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+    text-align: center;
 }
 
 /* --- 充值功能样式 --- */
 .wbg-modal {
-  display: none; /* Initially hidden */
-  position: fixed;
-  z-index: 2000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.7);
+    display: none; /* Initially hidden */
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 .wbg-modal.wbg-is-visible {
-  display: flex;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
 }
 
 .wbg-modal-content {
-  background-color: var(--primary-bg);
-  margin: auto;
-  padding: 25px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  text-align: center;
+    background-color: var(--primary-bg);
+    margin: auto;
+    padding: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    text-align: center;
 }
 
 .wbg-modal-content .close-button {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  color: #aaa;
-  font-size: 28px;
-  font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
 }
 
 .wbg-tier-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
 }
 
 .wbg-tier-button {
-  padding: 12px;
-  font-size: 1em;
-  background-color: var(--secondary-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
+    padding: 12px;
+    font-size: 1em;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
 }
 
 .wbg-tier-button:hover {
-  background-color: var(--button-hover-bg);
-  border-color: var(--accent-color);
+    background-color: var(--button-hover-bg);
+    border-color: var(--accent-color);
 }
 
 .wbg-important-note {
-  background-color: rgba(255, 235, 59, 0.1);
-  border: 1px solid #ffeb3b;
-  color: #ffeb3b;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 15px 0;
-  font-size: 0.9em;
+    background-color: rgba(255, 235, 59, 0.1);
+    border: 1px solid #ffeb3b;
+    color: #ffeb3b;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 15px 0;
+    font-size: 0.9em;
 }
 
 .wbg-payment-qrcode-container {
-  margin: 20px auto;
-  padding: 10px;
-  background-color: white;
-  border-radius: 8px;
-  width: fit-content;
+    margin: 20px auto;
+    padding: 10px;
+    background-color: white;
+    border-radius: 8px;
+    width: fit-content;
 }
 
 #wbg-payment-qrcode {
-  max-width: 200px;
-  height: auto;
-  display: block;
+    max-width: 200px;
+    height: auto;
+    display: block;
 }
 
 .wbg-payment-code-container {
-  margin-top: 15px;
-  font-size: 1.2em;
+    margin-top: 15px;
+    font-size: 1.2em;
 }
 
 .wbg-payment-code-container span {
-  color: #aaa;
+    color: #aaa;
 }
 
 #wbg-payment-code {
-  background-color: var(--secondary-bg);
-  padding: 5px 10px;
-  border-radius: 4px;
-  color: #ffeb3b;
-  letter-spacing: 2px;
+    background-color: var(--secondary-bg);
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #ffeb3b;
+    letter-spacing: 2px;
 }
 
 #wbg-payment-status {
-  margin-top: 20px;
-  font-weight: bold;
-  color: #0a84ff;
+    margin-top: 20px;
+    font-weight: bold;
+    color: #0a84ff;
 }
