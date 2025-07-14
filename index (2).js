@@ -782,32 +782,6 @@ jQuery(async () => {
         let dragThreshold = 5;
         let startX, startY;
 
-        // 新增：v52.3.0 边缘检测核心函数
-        const keepInBounds = () => {
-            const viewportWidth = $(window).width();
-            const viewportHeight = $(window).height();
-            const elementWidth = element.outerWidth();
-            const elementHeight = element.outerHeight();
-            const topMargin = 10; // 设置一个10像素的安全顶边距
-
-            let currentX = parseFloat(element.css('left'));
-            let currentY = parseFloat(element.css('top'));
-
-            const newX = Math.max(
-                0,
-                Math.min(currentX, viewportWidth - elementWidth),
-            );
-            const newY = Math.max(
-                topMargin,
-                Math.min(currentY, viewportHeight - elementHeight),
-            ); // 确保Y坐标不小于顶边距
-
-            element.css({
-                top: newY + 'px',
-                left: newX + 'px',
-            });
-        };
-
         const dragStart = (e) => {
             e.preventDefault();
             isDragging = false;
@@ -853,16 +827,15 @@ jQuery(async () => {
                 const viewportHeight = $(window).height();
                 const elementWidth = element.outerWidth();
                 const elementHeight = element.outerHeight();
-                const topMargin = 10; // 设置一个10像素的安全顶边距
 
                 newX = Math.max(
                     0,
                     Math.min(newX, viewportWidth - elementWidth),
                 );
                 newY = Math.max(
-                    topMargin,
+                    0,
                     Math.min(newY, viewportHeight - elementHeight),
-                ); // 确保Y坐标不小于顶边距
+                );
 
                 element.css({
                     top: newY + 'px',
@@ -877,10 +850,6 @@ jQuery(async () => {
 
             if (isDragging) {
                 element.css('cursor', 'grab');
-
-                // v52.3.0: 拖动结束后再次进行边缘检测
-                keepInBounds();
-
                 // 保存位置到 localStorage
                 const finalPosition = {
                     top: element.css('top'),
@@ -895,16 +864,9 @@ jQuery(async () => {
 
         element.on('mousedown touchstart', dragStart);
 
-        // v52.3.0: 监听窗口大小变化，动态调整按钮位置
-        $(window).on('resize', () => {
-            // 使用一个小的延迟来避免过于频繁的计算
-            setTimeout(keepInBounds, 100);
-        });
-
         // 返回一个函数，用于在 click 事件中检查是否发生了拖拽
         return {
             wasDragged: () => isDragging,
-            keepInBounds: keepInBounds, // 暴露 keepInBounds 函数
         };
     }
 
@@ -1813,7 +1775,9 @@ jQuery(async () => {
                     const instruction =
                         stage.instructions[i] ||
                         stage.instructions[stage.instructions.length - 1];
-                    const taskDisplayName = `${stage.name} (${i + 1}/${stage.count})`;
+                    const taskDisplayName = `${stage.name} (${i + 1}/${
+                        stage.count
+                    })`;
                     updateAutoGenStatus(`开始执行 ${taskDisplayName}...`);
 
                     // 定义要重试的完整任务：获取上下文、构建提示、调用AI、解析结果
@@ -2109,7 +2073,7 @@ jQuery(async () => {
             toastr.success(
                 `已加载 '${lastBookName}'，您可以对任意阶段进行创作。`,
             );
-            $('#wbg-popup-overlay').addClass('wbg-is-visible'); // 使用类来控制显示
+            $('#wbg-popup-overlay').css('display', 'flex'); // 确保弹窗可见
         } catch (error) {
             console.error(
                 `[${extensionName}] Failed to quick continue project:`,
@@ -2245,9 +2209,7 @@ jQuery(async () => {
 
         const fab = $('#wbg-floating-button');
 
-        const draggable = makeDraggable(fab);
-
-        // 恢复并优化位置记忆功能
+        // 加载按钮位置
         const savedPosition = localStorage.getItem('wbg_button_position');
         if (savedPosition) {
             try {
@@ -2255,7 +2217,7 @@ jQuery(async () => {
                 fab.css({
                     top: pos.top,
                     left: pos.left,
-                    right: 'auto', // 清除默认的 right/bottom
+                    right: 'auto',
                     bottom: 'auto',
                 });
             } catch (e) {
@@ -2264,8 +2226,7 @@ jQuery(async () => {
             }
         }
 
-        // 确保初始加载时按钮也在屏幕内
-        setTimeout(() => draggable.keepInBounds(), 100);
+        const draggable = makeDraggable(fab);
 
         fab.on('click', () => {
             // 如果是拖拽事件，则不执行点击逻辑
@@ -2301,12 +2262,12 @@ jQuery(async () => {
                 populateBooksDropdown();
             }
 
-            $('#wbg-popup-overlay').addClass('wbg-is-visible');
+            $('#wbg-popup-overlay').css('display', 'flex');
         });
 
         // 修正：使用 .wbg-header .close-button 确保只选择页头内的关闭按钮
         $('#wbg-popup-close-button').on('click', () =>
-            $('#wbg-popup-overlay').removeClass('wbg-is-visible'),
+            $('#wbg-popup-overlay').hide(),
         );
 
         $('#wbg-popup').on('click', (e) => e.stopPropagation());
@@ -2511,11 +2472,11 @@ jQuery(async () => {
             this.step1.show();
             this.step2.hide();
             this.tierButtons.prop('disabled', false);
-            this.modal.addClass('wbg-is-visible');
+            this.modal.css('display', 'flex'); // 使用flex来居中
         },
 
         hideModal() {
-            this.modal.removeClass('wbg-is-visible');
+            this.modal.hide();
             if (this.pollInterval) {
                 clearInterval(this.pollInterval);
                 this.pollInterval = null;
@@ -2587,9 +2548,7 @@ jQuery(async () => {
 
                     creditManager.add(data.credits);
 
-                    this.statusElement
-                        .text('充值成功！')
-                        .css('color', '#4CAF50');
+                    this.statusElement.text('充值成功！').css('color', '#4CAF50');
 
                     setTimeout(() => {
                         this.hideModal();

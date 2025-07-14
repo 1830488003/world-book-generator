@@ -8,11 +8,14 @@
 <body>
     <div id="wbg-popup-overlay">
         <div id="wbg-popup" class="popup-content">
+            <!-- 关闭按钮现在独立于header，便于绝对定位 -->
+            <div id="wbg-popup-close-container">
+                <span id="wbg-popup-close-button" class="close-button">&times;</span>
+            </div>
             <div class="wbg-header">
-        <h2>世界书生成器</h2>
-        <span id="wbg-popup-close-button" class="close-button">&times;</span>
-    </div>
-    <div id="wbg-content-container">
+                <h2>世界书生成器</h2>
+            </div>
+            <div id="wbg-content-container">
         <!-- 欢迎页面 -->
             <div id="wbg-landing-page">
                 <h3>欢迎回来！</h3>
