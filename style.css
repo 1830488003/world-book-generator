@@ -51,16 +51,12 @@
   display: flex !important;
 }
 
-/* 全局隐藏滚动条 */
-html,
-body,
+/* 插件内部容器隐藏滚动条 */
 #wbg-content-container {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
 #wbg-content-container::-webkit-scrollbar {
   display: none; /* Safari, Chrome, Opera */
 }
@@ -103,12 +99,27 @@ body::-webkit-scrollbar,
   z-index: 20;
 }
 
-.close-button {
+#wbg-popup .close-button {
   font-size: 28px;
   font-weight: bold;
   color: #aaa;
   cursor: pointer;
   transition: color 0.3s;
+}
+
+#wbg-popup .back-button {
+  font-size: 16px;
+  color: #aaa;
+  cursor: pointer;
+  transition: color 0.3s;
+  margin-right: 15px;
+  line-height: 28px; /* 与关闭按钮垂直对齐 */
+  vertical-align: middle;
+}
+
+#wbg-popup .back-button:hover,
+#wbg-popup .close-button:hover {
+  color: var(--accent-color);
 }
 
 /* 内容容器，使其可滚动 */
@@ -140,7 +151,7 @@ body::-webkit-scrollbar,
 }
 
 /* 按钮样式 */
-.action-button {
+.wbg-action-button {
   padding: 10px 15px;
   border: none;
   border-radius: 6px;
@@ -151,18 +162,18 @@ body::-webkit-scrollbar,
   font-weight: bold;
 }
 
-.action-button:hover {
+.wbg-action-button:hover {
   background-color: var(--button-hover-bg);
 }
 
-.action-button.primary {
+.wbg-action-button.wbg-primary {
   background-color: var(--primary-button-bg);
   color: white;
   width: 100%;
   font-size: 16px;
 }
 
-.action-button.primary:hover {
+.wbg-action-button.wbg-primary:hover {
   background-color: var(--primary-button-hover-bg);
 }
 
@@ -176,7 +187,7 @@ body::-webkit-scrollbar,
   flex-direction: column;
 }
 
-.wbg-button-group.vertical .action-button {
+.wbg-button-group.vertical .wbg-action-button {
   width: 100%;
   margin-bottom: 0;
 }
@@ -224,19 +235,19 @@ body::-webkit-scrollbar,
 }
 
 /* 输入组 */
-.input-group {
+.wbg-input-group {
   margin-bottom: 15px;
 }
 
-.input-group label {
+.wbg-input-group label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
 }
 
-.input-group input[type='text'],
-.input-group select,
-.wbg-textarea {
+#wbg-popup .wbg-input-group input[type='text'],
+#wbg-popup .wbg-input-group select,
+#wbg-popup .wbg-textarea {
   width: 100%;
   padding: 10px;
   border-radius: 6px;
@@ -246,8 +257,8 @@ body::-webkit-scrollbar,
   box-sizing: border-box;
 }
 
-/* 按钮样式 */
-.action-button {
+/* 按钮样式 (已修复) */
+.wbg-action-button {
   padding: 10px 15px;
   border: none;
   border-radius: 6px;
@@ -258,18 +269,18 @@ body::-webkit-scrollbar,
   font-weight: bold;
 }
 
-.action-button:hover {
+.wbg-action-button:hover {
   background-color: var(--button-hover-bg);
 }
 
-.action-button.primary {
+.wbg-action-button.wbg-primary {
   background-color: var(--primary-button-bg);
   color: white;
   width: 100%;
   font-size: 16px;
 }
 
-.action-button.primary:hover {
+.wbg-action-button.wbg-primary:hover {
   background-color: var(--primary-button-hover-bg);
 }
 
@@ -283,7 +294,7 @@ body::-webkit-scrollbar,
   flex-direction: column;
 }
 
-.wbg-button-group.vertical .action-button {
+.wbg-button-group.vertical .wbg-action-button {
   width: 100%;
   margin-bottom: 0;
 }
@@ -331,7 +342,7 @@ body::-webkit-scrollbar,
   gap: 10px;
 }
 
-.tags-container {
+.wbg-tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -342,7 +353,7 @@ body::-webkit-scrollbar,
   flex-grow: 1;
 }
 
-.tag {
+.wbg-tag {
   background-color: var(--accent-color);
   color: white;
   padding: 5px 10px;
@@ -360,27 +371,27 @@ body::-webkit-scrollbar,
 }
 
 /* --- 高级设定选项 UI --- */
-.randomize-container {
+.wbg-randomize-container {
   text-align: center;
   margin-bottom: 10px;
 }
 
 /* 为随机按钮特别设置蓝底 */
-.randomize-container .action-button {
+.wbg-randomize-container .wbg-action-button {
   background-color: var(--accent-color);
   color: white;
   border: 1px solid var(--primary-button-hover-bg);
 }
 
-.randomize-container .action-button:hover {
+.wbg-randomize-container .wbg-action-button:hover {
   background-color: var(--primary-button-hover-bg);
 }
 
-details {
+#wbg-popup details {
   margin-bottom: 15px;
 }
 
-.summary-as-button {
+#wbg-popup .wbg-summary-as-button {
   display: inline-block;
   padding: 8px 15px;
   background-color: #4a4a4a;
@@ -394,32 +405,32 @@ details {
   list-style: none;
 }
 
-.summary-as-button::-webkit-details-marker {
+.wbg-summary-as-button::-webkit-details-marker {
   display: none;
 }
 
-.summary-as-button:hover {
+.wbg-summary-as-button:hover {
   background-color: #5a5a5a;
 }
 
-.summary-as-button::before {
+.wbg-summary-as-button::before {
   content: '▶';
   display: inline-block;
   margin-right: 8px;
   transition: transform 0.2s;
 }
 
-details[open] > .summary-as-button::before {
+#wbg-popup details[open] > .wbg-summary-as-button::before {
   transform: rotate(90deg);
 }
 
-.small-button {
+.wbg-small-button {
   padding: 8px 12px;
   font-size: 0.9em;
   flex-shrink: 0;
 }
 
-.advanced-options-grid {
+.wbg-advanced-options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 15px;
@@ -431,7 +442,7 @@ details[open] > .summary-as-button::before {
   margin-top: -1px;
 }
 
-.advanced-option-item {
+.wbg-advanced-option-item {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -451,13 +462,13 @@ details[open] > .summary-as-button::before {
   margin-top: -1px;
 }
 
-.advanced-option-item label {
+.wbg-advanced-option-item label {
   font-size: 0.95em;
   color: #ddd;
   font-weight: bold;
 }
 
-.advanced-option-item select {
+#wbg-popup .wbg-advanced-option-item select {
   width: 100%;
   padding: 6px;
   background-color: #333;
@@ -633,13 +644,13 @@ input:checked + .wbg-slider:before {
   margin-top: 5px;
 }
 
-.config-item {
+.wbg-config-item {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.config-item label {
+.wbg-config-item label {
   font-size: 0.9em;
   color: #ccc;
   font-weight: normal;
