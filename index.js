@@ -2268,11 +2268,14 @@ jQuery(async () => {
         // 确保初始加载时按钮也在屏幕内
         setTimeout(() => draggable.keepInBounds(), 100);
 
-        fab.on('click', () => {
+        fab.on('click', async() => { // Make the handler async
             // 如果是拖拽事件，则不执行点击逻辑
             if (draggable.wasDragged()) {
                 return;
             }
+
+            // 核心修复：每次打开窗口时都检查待处理订单
+            await rechargeManager.checkPendingOrders();
 
             // 检查是否有后台任务正在运行或已完成
             if (
@@ -2416,8 +2419,8 @@ jQuery(async () => {
         use() {
             if (this.credits <= 0) {
                 toastr.error('AI调用次数已用完，请充值。');
-                // 自动弹出充值窗口
-                rechargeManager.showModal();
+                // REFACTORED: 不再弹出弹窗，而是切换到充值页面
+                rechargeManager.showPage();
                 return false; // 表示次数不足
             }
             this.credits--;
@@ -2426,11 +2429,13 @@ jQuery(async () => {
             return true; // 表示扣除成功
         },
 
-        add(amount) {
+        add(amount, showToast = true) {
             this.credits += amount;
             localStorage.setItem(this.storageKey, this.credits);
             this.updateDisplay();
-            toastr.success(`成功充值 ${amount} 次！`);
+            if (showToast) {
+                toastr.success(`成功充值 ${amount} 次！`);
+            }
         },
 
         updateDisplay() {
@@ -2474,11 +2479,10 @@ jQuery(async () => {
         }
     }
 
-    // --- 新增：充值逻辑管理器 (已适配新版API) ---
+    // --- REFACTORED: 充值逻辑管理器 (页面切换模式) ---
     const rechargeManager = {
-        modal: null,
-        closeButton: null,
         rechargeButton: null,
+        backButton: null,
         tierButtons: null,
         step1: null,
         step2: null,
@@ -2486,37 +2490,82 @@ jQuery(async () => {
         codeElement: null,
         statusElement: null,
 
-        orderId: null, // 从 requestId 改为 orderId
+        previousPage: null, // 用于记录返回地址
+        orderId: null,
         pollInterval: null,
+        pendingOrdersKey: 'wbg_pending_orders', // 新增：用于存储待处理订单的key
 
         init() {
-            this.modal = $('#wbg-recharge-modal');
-            this.closeButton = $('#wbg-recharge-modal-close');
             this.rechargeButton = $('#wbg-recharge-button');
-            this.tierButtons = $('.wbg-tier-button');
+            this.backButton = $('#wbg-recharge-back-button');
+            this.tierButtons = $('#wbg-recharge-page .wbg-tier-button'); // 使用更精确的选择器
             this.step1 = $('#wbg-recharge-step-1');
             this.step2 = $('#wbg-recharge-step-2');
             this.priceElement = $('#wbg-recharge-price');
             this.codeElement = $('#wbg-payment-code');
             this.statusElement = $('#wbg-payment-status');
 
-            this.rechargeButton.on('click', () => this.showModal());
-            this.closeButton.on('click', () => this.hideModal());
+            this.rechargeButton.on('click', () => this.showPage());
+            this.backButton.on('click', () => this.hidePage());
             this.tierButtons.on('click', (event) => {
                 const tier = $(event.currentTarget).data('tier');
                 this.initiateRecharge(tier);
             });
+
+            // BUGFIX: 不应在init时检查，而应在每次打开窗口时检查
+            // this.checkPendingOrders();
         },
 
-        showModal() {
+        getPendingOrders() {
+            const ordersJson = localStorage.getItem(this.pendingOrdersKey);
+            return ordersJson ? JSON.parse(ordersJson) : [];
+        },
+
+        addPendingOrder(orderId) {
+            const orders = this.getPendingOrders();
+            if (!orders.includes(orderId)) {
+                orders.push(orderId);
+                localStorage.setItem(this.pendingOrdersKey, JSON.stringify(orders));
+            }
+        },
+
+        removePendingOrder(orderId) {
+            let orders = this.getPendingOrders();
+            orders = orders.filter(id => id !== orderId);
+            localStorage.setItem(this.pendingOrdersKey, JSON.stringify(orders));
+        },
+
+        showPage() {
+            // 确定当前显示的页面并保存
+            if ($('#wbg-landing-page').is(':visible')) {
+                this.previousPage = '#wbg-landing-page';
+            } else if ($('#wbg-generator-page').is(':visible')) {
+                this.previousPage = '#wbg-generator-page';
+            } else if ($('#wbg-auto-generator-page').is(':visible')) {
+                this.previousPage = '#wbg-auto-generator-page';
+            } else {
+                this.previousPage = '#wbg-landing-page'; // 默认返回欢迎页
+            }
+
+            // 隐藏当前页面，显示充值页面
+            $(this.previousPage).hide();
+            $('#wbg-recharge-page').show();
+
+            // 重置充值页面状态
             this.step1.show();
             this.step2.hide();
             this.tierButtons.prop('disabled', false);
-            this.modal.addClass('wbg-is-visible');
+            this.statusElement.text('正在等待支付确认...').css('color', ''); // 恢复默认文字和颜色
         },
 
-        hideModal() {
-            this.modal.removeClass('wbg-is-visible');
+        hidePage() {
+            $('#wbg-recharge-page').hide();
+            if (this.previousPage) {
+                $(this.previousPage).show();
+            } else {
+                $('#wbg-landing-page').show(); // 默认返回欢迎页
+            }
+
             if (this.pollInterval) {
                 clearInterval(this.pollInterval);
                 this.pollInterval = null;
@@ -2528,7 +2577,6 @@ jQuery(async () => {
             toastr.info('正在生成支付订单...');
 
             try {
-                // 请求新的API端点，并且不再发送requestId
                 const response = await fetch(
                     `${PAYMENT_SERVER_URL}/api/create-order`,
                     {
@@ -2544,17 +2592,16 @@ jQuery(async () => {
                 }
 
                 const data = await response.json();
-                this.orderId = data.orderId; // 保存 orderId 用于轮询
+                this.orderId = data.orderId;
+                this.addPendingOrder(this.orderId); // 核心：将新订单ID添加到待处理列表
 
-                // 更新UI，二维码是静态的，不需要从后端获取URL
                 this.priceElement.text(data.price);
-                this.codeElement.text(data.orderId); // 显示订单ID作为支付口令
+                this.codeElement.text(data.orderId);
 
                 this.step1.hide();
                 this.step2.show();
                 this.statusElement.text('正在等待支付确认...');
 
-                // 开始轮询
                 this.pollInterval = setInterval(
                     () => this.checkRechargeStatus(),
                     3000,
@@ -2570,7 +2617,6 @@ jQuery(async () => {
             if (!this.orderId) return;
 
             try {
-                // 查询新的API端点
                 const response = await fetch(
                     `${PAYMENT_SERVER_URL}/api/order-status?orderId=${this.orderId}`,
                 );
@@ -2581,23 +2627,55 @@ jQuery(async () => {
 
                 const data = await response.json();
 
-                // 后端返回的状态是 'completed'
                 if (data.status === 'completed') {
                     clearInterval(this.pollInterval);
                     this.pollInterval = null;
+                    this.removePendingOrder(this.orderId); // 核心：从待处理列表移除已完成的订单
 
-                    creditManager.add(data.credits);
+                    creditManager.add(data.credits, true); // 明确显示默认提示
 
                     this.statusElement
-                        .text('充值成功！')
+                        .text('充值成功！2秒后自动返回...')
                         .css('color', '#4CAF50');
 
                     setTimeout(() => {
-                        this.hideModal();
+                        this.hidePage();
                     }, 2000);
                 }
             } catch (error) {
                 console.error('轮询支付状态时发生网络错误:', error);
+            }
+        },
+
+        async checkPendingOrders() {
+            const pendingOrders = this.getPendingOrders();
+            if (pendingOrders.length === 0) {
+                return;
+            }
+
+            console.log(`[${extensionName}] 检测到 ${pendingOrders.length} 个待处理的支付订单，正在检查...`);
+
+            let totalCompensatedCredits = 0;
+
+            for (const orderId of pendingOrders) {
+                try {
+                    const response = await fetch(`${PAYMENT_SERVER_URL}/api/order-status?orderId=${orderId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'completed') {
+                            creditManager.add(data.credits, false); // 静默增加次数
+                            totalCompensatedCredits += data.credits;
+                            this.removePendingOrder(orderId);
+                            console.log(`[${extensionName}] 订单 ${orderId} 已支付，成功补偿 ${data.credits} 次。`);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`[${extensionName}] 检查待处理订单 ${orderId} 时出错:`, error);
+                }
+            }
+
+            if (totalCompensatedCredits > 0) {
+                toastr.success(`欢迎回来！检测到您有已支付的订单，已成功为您补充 ${totalCompensatedCredits} 次调用次数。`, '充值补偿成功');
             }
         },
     };
