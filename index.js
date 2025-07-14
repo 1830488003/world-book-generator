@@ -3,7 +3,7 @@ jQuery(async () => {
     // -----------------------------------------------------------------
     // 1. 定义常量和状态变量
     // -----------------------------------------------------------------
-    const PAYMENT_SERVER_URL = 'https://cool-rain-6db8.1830488003.workers.dev';
+    const PAYMENT_SERVER_URL = 'https://world-book-payment-server.vercel.app';
     const extensionName = 'world-book-generator';
     const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
     let tavernHelperApi; // 存储 TavernHelper API
