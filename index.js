@@ -1064,7 +1064,7 @@ jQuery(async () => {
         toastr.info('正在构建提示词并注入思想钢印，请稍候...');
         $('#generateFoundationButton').prop('disabled', true).text('生成中...');
         $('#uploadFoundationButton').prop('disabled', true);
-        $('#aiResponseTextArea').val('AI正在思考...');
+        $('#aiResponseTextArea-stage1').val('AI正在思考...');
 
         try {
             const [unrestrictPrompt, writingGuide, promptTemplate] =
@@ -1092,12 +1092,12 @@ jQuery(async () => {
             const rawAiResponse = await callApiWithCredits(payload);
 
             projectState.generatedContent = rawAiResponse;
-            $('#aiResponseTextArea').val(rawAiResponse);
+            $('#aiResponseTextArea-stage1').val(rawAiResponse);
             $('#uploadFoundationButton').prop('disabled', false);
             toastr.success('AI已生成回复，请检查内容后决定是否上传。');
         } catch (error) {
             console.error(`[${extensionName}] 生成世界基石失败:`, error);
-            $('#aiResponseTextArea').val(`生成失败: ${error.message}`);
+            $('#aiResponseTextArea-stage1').val(`生成失败: ${error.message}`);
             toastr.error(`操作失败: ${error.message}`);
         } finally {
             $('#generateFoundationButton')
@@ -1130,7 +1130,7 @@ jQuery(async () => {
             toastr.success(
                 `成功上传 ${newGeneratedEntries.length} 个新条目到世界书 '${bookName}'！`,
             );
-            $('#aiResponseTextArea').val(
+            $('#aiResponseTextArea-stage1').val(
                 '上传成功！您可以继续补充内容，或通过上方按钮切换到下一阶段。',
             );
             // setActiveStage(2); // 根据用户要求，禁用自动跳转

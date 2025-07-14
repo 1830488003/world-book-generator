@@ -10,6 +10,12 @@
 - **【UI更新】** 更新了 `manifest.json`、`popup.html` 和 `settings.html` 中的插件名称和标题。同时，将主界面的核心功能按钮重命名为“创建世界书+角色卡”，以更准确地反映其功能。
 - **【文档更新】** 同步更新项目文档，全局替换旧名称为新名称。
 
+## v52.11.5 - BUG修复
+
+- **【BUG修复】** 修复了因UI重命名引入的BUG，该BUG导致手动生成模式下的“生成/补充内容”按钮点击后无响应。
+    - **问题**: 在 `index.js` 的 `handleGenerateFoundation` 函数中，用于操作AI响应文本框的jQuery选择器使用了错误的ID (`#aiResponseTextArea`)，而正确的ID应为 `#aiResponseTextArea-stage1`。
+    - **解决方案**: 将 `index.js` 中所有相关的选择器从 `#aiResponseTextArea` 修正为 `#aiResponseTextArea-stage1`，恢复了按钮的正常功能。
+
 ## v52.11.3 - 支付流程UI优化
 
 - **【UI优化】** 修复了支付按钮文本显示BUG，并优化了等待提示信息。
