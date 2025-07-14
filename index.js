@@ -2546,13 +2546,24 @@ jQuery(async () => {
 
         getPendingOrders() {
             const ordersJson = localStorage.getItem(this.pendingOrdersKey);
-            return ordersJson ? JSON.parse(ordersJson) : [];
+            if (!ordersJson) return [];
+            let orders = JSON.parse(ordersJson);
+            // 从旧格式（字符串数组）到新格式（对象数组）的迁移程序
+            if (orders.length > 0 && typeof orders[0] === 'string') {
+                orders = orders.map((id) => ({ id: id, failures: 0 }));
+                localStorage.setItem(
+                    this.pendingOrdersKey,
+                    JSON.stringify(orders),
+                );
+            }
+            return orders;
         },
 
         addPendingOrder(orderId) {
             const orders = this.getPendingOrders();
-            if (!orders.includes(orderId)) {
-                orders.push(orderId);
+            // 确保不会重复添加同一个订单ID
+            if (!orders.some((order) => order.id === orderId)) {
+                orders.push({ id: orderId, failures: 0 });
                 localStorage.setItem(
                     this.pendingOrdersKey,
                     JSON.stringify(orders),
@@ -2562,7 +2573,7 @@ jQuery(async () => {
 
         removePendingOrder(orderId) {
             let orders = this.getPendingOrders();
-            orders = orders.filter((id) => id !== orderId);
+            orders = orders.filter((order) => order.id !== orderId);
             localStorage.setItem(this.pendingOrdersKey, JSON.stringify(orders));
         },
 
@@ -2732,7 +2743,7 @@ jQuery(async () => {
         },
 
         async checkPendingOrders() {
-            const pendingOrders = this.getPendingOrders();
+            let pendingOrders = this.getPendingOrders();
             if (pendingOrders.length === 0) {
                 return;
             }
@@ -2742,8 +2753,11 @@ jQuery(async () => {
             );
 
             let totalCompensatedCredits = 0;
+            const maxFailures = 20; // 设置最大失败次数阈值
+            let ordersModified = false;
 
-            for (const orderId of pendingOrders) {
+            for (const order of pendingOrders) {
+                const orderId = order.id;
                 try {
                     const response = await fetch(
                         `${PAYMENT_SERVER_URL}/api/order-status?orderId=${orderId}`,
@@ -2751,20 +2765,68 @@ jQuery(async () => {
                     if (response.ok) {
                         const data = await response.json();
                         if (data.status === 'completed') {
-                            creditManager.add(data.credits, false); // 静默增加次数
+                            creditManager.add(data.credits, false);
                             totalCompensatedCredits += data.credits;
-                            this.removePendingOrder(orderId);
+                            // 标记为待删除，而不是直接修改数组
+                            order.toDelete = true;
+                            ordersModified = true;
                             console.log(
                                 `[${extensionName}] 订单 ${orderId} 已支付，成功补偿 ${data.credits} 次。`,
                             );
                         }
+                        // 如果查询成功，重置失败计数器
+                        if (order.failures > 0) {
+                            order.failures = 0;
+                            ordersModified = true;
+                        }
+                    } else if (response.status === 404) {
+                        console.log(
+                            `[${extensionName}] 订单 ${orderId} 在服务器上未找到(404)，将从本地永久移除。`,
+                        );
+                        order.toDelete = true;
+                        ordersModified = true;
+                    } else {
+                        // 其他HTTP错误（如500），增加失败计数
+                        order.failures++;
+                        ordersModified = true;
+                        console.warn(
+                            `[${extensionName}] 检查订单 ${orderId} 时服务器返回错误 ${response.status}。失败次数: ${order.failures}`,
+                        );
                     }
                 } catch (error) {
+                    // 网络错误，增加失败计数
+                    order.failures++;
+                    ordersModified = true;
                     console.error(
-                        `[${extensionName}] 检查待处理订单 ${orderId} 时出错:`,
-                        error,
+                        `[${extensionName}] 检查待处理订单 ${orderId} 时发生网络错误:`,
+                        error.message,
+                    );
+                    console.warn(
+                        `[${extensionName}] 订单 ${orderId} 失败次数: ${order.failures}`,
                     );
                 }
+
+                // 检查是否达到最大失败次数
+                if (order.failures >= maxFailures) {
+                    console.warn(
+                        `[${extensionName}] 订单 ${orderId} 已达到最大失败次数 (${maxFailures})，将从本地移除以防垃圾信息。`,
+                    );
+                    order.toDelete = true;
+                    ordersModified = true;
+                }
+            }
+
+            // 统一处理本地存储的更新
+            if (ordersModified) {
+                let updatedOrders = pendingOrders.filter(
+                    (order) => !order.toDelete,
+                );
+                // 清理掉临时的 toDelete 属性
+                updatedOrders.forEach((order) => delete order.toDelete);
+                localStorage.setItem(
+                    this.pendingOrdersKey,
+                    JSON.stringify(updatedOrders),
+                );
             }
 
             if (totalCompensatedCredits > 0) {
