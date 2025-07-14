@@ -26,3 +26,5 @@
 - **自定义AI**：可以接入你自己的AI模型。
 - **断点续传**：随时可以停下，下次再接着上次的进度继续写。
 安装链接：
+国内：https://gitee.com/qq410847381/world-book-generator.git
+国外：https://github.com/1830488003/world-book-generator.git
