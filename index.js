@@ -809,7 +809,7 @@ jQuery(async () => {
         };
 
         const dragStart = (e) => {
-            e.preventDefault();
+            // e.preventDefault(); // BUGFIX: 不要在这里阻止默认事件，它会阻止移动设备上的点击事件。仅在实际拖动时阻止。
             isDragging = false;
             const touch =
                 e.type === 'touchstart' ? e.originalEvent.touches[0] : e;
@@ -846,6 +846,7 @@ jQuery(async () => {
             }
 
             if (isDragging) {
+                e.preventDefault(); // BUGFIX: 在拖动时阻止页面滚动
                 let newX = touch.clientX - offsetX;
                 let newY = touch.clientY - offsetY;
 
