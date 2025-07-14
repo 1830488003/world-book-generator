@@ -2493,17 +2493,19 @@ jQuery(async () => {
         previousPage: null, // 用于记录返回地址
         orderId: null,
         pollInterval: null,
-        pendingOrdersKey: 'wbg_pending_orders', // 新增：用于存储待处理订单的key
+        pendingOrdersKey: 'wbg_pending_orders',
 
         init() {
             this.rechargeButton = $('#wbg-recharge-button');
             this.backButton = $('#wbg-recharge-back-button');
-            this.tierButtons = $('#wbg-recharge-page .wbg-tier-button'); // 使用更精确的选择器
+            this.tierButtons = $('#wbg-recharge-page .wbg-tier-button');
             this.step1 = $('#wbg-recharge-step-1');
             this.step2 = $('#wbg-recharge-step-2');
             this.priceElement = $('#wbg-recharge-price');
             this.codeElement = $('#wbg-payment-code');
             this.statusElement = $('#wbg-payment-status');
+            this.confirmPaymentButton = $('#wbg-confirm-payment-button');
+            this.waitMessage = $('#wbg-payment-wait-message');
 
             this.rechargeButton.on('click', () => this.showPage());
             this.backButton.on('click', () => this.hidePage());
@@ -2511,9 +2513,7 @@ jQuery(async () => {
                 const tier = $(event.currentTarget).data('tier');
                 this.initiateRecharge(tier);
             });
-
-            // BUGFIX: 不应在init时检查，而应在每次打开窗口时检查
-            // this.checkPendingOrders();
+            this.confirmPaymentButton.on('click', () => this.confirmUserPaymentAndStartPolling());
         },
 
         getPendingOrders() {
@@ -2572,19 +2572,17 @@ jQuery(async () => {
             }
         },
 
+        // 步骤1: 选择档位后，创建订单并获取orderId
         async initiateRecharge(tier) {
             this.tierButtons.prop('disabled', true);
             toastr.info('正在生成支付订单...');
 
             try {
-                const response = await fetch(
-                    `${PAYMENT_SERVER_URL}/api/create-order`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ tier }),
-                    },
-                );
+                const response = await fetch(`${PAYMENT_SERVER_URL}/api/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tier }),
+                });
 
                 if (!response.ok) {
                     const errData = await response.json();
@@ -2592,24 +2590,61 @@ jQuery(async () => {
                 }
 
                 const data = await response.json();
-                this.orderId = data.orderId;
-                this.addPendingOrder(this.orderId); // 核心：将新订单ID添加到待处理列表
+                this.orderId = data.orderId; // 保存订单ID
+                this.addPendingOrder(this.orderId);
 
                 this.priceElement.text(data.price);
-                this.codeElement.text(data.orderId);
+                this.codeElement.text(this.orderId); // 显示订单ID作为口令
 
                 this.step1.hide();
                 this.step2.show();
-                this.statusElement.text('正在等待支付确认...');
+                
+                this.statusElement.text('请在付款后，点击下方“我已付款”按钮开始确认。');
+                this.confirmPaymentButton.show().prop('disabled', false).text('我已付款');
+                this.waitMessage.hide();
 
-                this.pollInterval = setInterval(
-                    () => this.checkRechargeStatus(),
-                    3000,
-                );
             } catch (error) {
                 console.error('充值初始化失败:', error);
                 toastr.error(`获取支付信息失败: ${error.message}`);
                 this.tierButtons.prop('disabled', false);
+            }
+        },
+
+        // 步骤2: 用户点击“我已付款”后，通知服务器并开始轮询
+        async confirmUserPaymentAndStartPolling() {
+            if (!this.orderId) {
+                toastr.error('无订单信息，请返回重试。');
+                return;
+            }
+            
+            this.confirmPaymentButton.prop('disabled', true).text('正在提交...');
+            toastr.info('正在提交您的付款确认...');
+
+            try {
+                // 先通知服务器用户已付款
+                const confirmResponse = await fetch(`${PAYMENT_SERVER_URL}/api/user-confirm-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: this.orderId }),
+                });
+
+                if (!confirmResponse.ok) {
+                    const errData = await confirmResponse.json();
+                    throw new Error(errData.message || '提交确认失败。');
+                }
+
+                // 提交成功后，更新UI并开始轮询
+                this.confirmPaymentButton.hide();
+                this.waitMessage.show();
+                this.statusElement.html('<b>正在等待管理员审核...</b><br><br>由于存在离线补偿机制，您可以随时关闭此页面。<br>充值成功后，调用次数会自动到账。');
+
+                this.pollInterval = setInterval(() => this.checkRechargeStatus(), 3000);
+                this.checkRechargeStatus();
+
+            } catch (error) {
+                console.error('提交付款确认失败:', error);
+                toastr.error(`操作失败: ${error.message}`);
+                this.confirmPaymentButton.prop('disabled', false).text('我已付款');
             }
         },
 

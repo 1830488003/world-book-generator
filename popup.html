@@ -260,7 +260,15 @@
                         <span>支付口令:</span>
                         <strong id="wbg-payment-code"></strong>
                     </div>
-                    <div id="wbg-payment-status">正在等待支付确认...</div>
+                    <div id="wbg-payment-status"></div>
+                    
+                    <!-- 新增：用户确认支付区域 -->
+                    <div id="wbg-confirm-payment-section" style="margin-top: 15px;">
+                        <button id="wbg-confirm-payment-button" class="action-button primary">我已付款</button>
+                        <p id="wbg-payment-wait-message" style="display: none; font-size: 0.9em; color: #888; margin-top: 10px;">
+                            请耐心等待充值到账。如果长时间未到账，请联系客服QQ: 1830488003
+                        </p>
+                    </div>
                 </div>
                 <div class="wbg-button-group" style="margin-top: 20px;">
                     <button id="wbg-recharge-back-button" class="action-button secondary">返回</button>
