@@ -165,7 +165,7 @@ jQuery(async () => {
     // -----------------------------------------------------------------
     class WBGUpdater {
         constructor() {
-            this.owner = 'momo-desu';
+            this.owner = '1830488003';
             this.repo = 'world-book-generator';
             this.currentVersion = '';
             this.latestVersion = '';
@@ -204,9 +204,9 @@ jQuery(async () => {
                 this.loadSettings();
                 this.setupEventListeners();
 
-                if (this.elements.autoUpdateToggle.checked) {
-                    this.checkForUpdates(false);
-                }
+                // if (this.elements.autoUpdateToggle.checked) {
+                //     this.checkForUpdates(false);
+                // }
             } catch (error) {
                 console.error('WBGUpdater 初始化失败:', error);
                 if (toastr)
@@ -2225,12 +2225,6 @@ jQuery(async () => {
 
             console.log(`[${extensionName}] 6. HTML已注入到专用容器中。`);
 
-            // 在HTML加载后，初始化更新器
-            console.log(`[${extensionName}] 7. 准备初始化更新检查器...`);
-            const updater = new WBGUpdater();
-            await updater.init();
-            console.log(`[${extensionName}] 8. 更新检查器初始化成功。`);
-
             // 新增：加载API设置并绑定事件
             console.log(`[${extensionName}] 9. 准备加载API设置...`);
             loadSettings();
@@ -2290,6 +2284,12 @@ jQuery(async () => {
         // 确保初始加载时按钮也在屏幕内
         setTimeout(() => draggable.keepInBounds(), 100);
 
+        // 在HTML加载后，初始化更新器
+        console.log(`[${extensionName}] 7. 准备初始化更新检查器...`);
+        const updater = new WBGUpdater();
+        await updater.init();
+        console.log(`[${extensionName}] 8. 更新检查器初始化成功。`);
+
         fab.on('click', async () => {
             // Make the handler async
             // 如果是拖拽事件，则不执行点击逻辑
@@ -2297,8 +2297,31 @@ jQuery(async () => {
                 return;
             }
 
-            // 核心修复：每次打开窗口时都检查待处理订单
-            await rechargeManager.checkPendingOrders();
+            // 最终修复：将网络请求串行化，并在后台执行，避免竞争和互相干扰
+            setTimeout(async () => {
+                // 任务一：后台安全地检查待处理订单
+                try {
+                    console.log('[WBG] 后台任务#1: 开始检查待处理订单...');
+                    await rechargeManager.checkPendingOrders();
+                    console.log('[WBG] 后台任务#1: 检查待处理订单完成。');
+                } catch (error) {
+                    console.error('[WBG] 后台检查订单时捕获到顶层错误:', error);
+                }
+
+                // 任务二：在前一个任务完成后，再开始检查更新
+                try {
+                    if (updater && updater.elements && updater.elements.autoUpdateToggle && updater.elements.autoUpdateToggle.checked) {
+                        console.log('[WBG] 后台任务#2: 开始检查更新...');
+                        await updater.checkForUpdates(false);
+                        console.log('[WBG] 后台任务#2: 检查更新完成。');
+                    } else {
+                        console.log('[WBG] 后台任务#2: 自动更新已关闭，跳过检查。');
+                    }
+                } catch (error) {
+                    console.error('[WBG] 后台检查更新时捕获到顶层错误:', error);
+                }
+            }, 200); // 稍微增加延迟，确保UI完全稳定
+
 
             // 检查是否有后台任务正在运行或已完成
             if (
