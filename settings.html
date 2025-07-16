@@ -1,8 +1,18 @@
-<div class="wbg-settings-container">
+<div class="extension_settings" data-extension-name="world-book-generator">
     <div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header">
-            <b>一键做卡工具（自动生成角色卡+世界书）</b>
-            <div class="inline-drawer-icon fa-solid fa-circle-info"></div>
+            <b>
+                <i class="fa-solid fa-book-sparkles"></i>
+                一键做卡工具
+                <span
+                    class="update-indicator"
+                    style="display: none"
+                    title="发现新版本！"
+                ></span>
+            </b>
+            <div
+                class="inline-drawer-icon fa-solid fa-circle-chevron-down down"
+            ></div>
         </div>
         <div class="inline-drawer-content">
             <p>
@@ -61,5 +71,18 @@
         <div class="setting_item">
             <button id="wbg-save-api" class="menu_button">保存自定义API</button>
         </div>
+    </div>
+
+    <hr />
+
+    <!-- 版本更新区域 -->
+    <div class="wbg-version-panel">
+        <p>
+            当前版本:
+            <span id="wbg-current-version">1.0.0</span>
+        </p>
+        <button id="wbg-check-update-button" class="menu_button">
+            <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
+        </button>
     </div>
 </div>
