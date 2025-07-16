@@ -111,7 +111,7 @@ async function triggerUpdate() {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
-                extensionName: 'world-book-generator',
+                extensionName: 'third-party/world-book-generator',
                 global: false,
             }),
         });
