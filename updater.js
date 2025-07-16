@@ -1,15 +1,11 @@
 // SillyTavern Extension Updater for GitHub repositories
 
-import { getRequestHeaders } from '/scripts/script.js';
-import { extension_settings } from '/scripts/extensions.js';
-import { toastr } from '/scripts/ui.js';
-
 const GITHUB_USER = '1830488003';
 const GITHUB_REPO = 'world-book-generator';
 const GITHUB_BRANCH = 'main';
 const MANIFEST_PATH = 'manifest.json';
 
-const LOCAL_MANIFEST_PATH = `/extensions/third-party/world-book-generator/${MANIFEST_PATH}`;
+const LOCAL_MANIFEST_PATH = `/scripts/extensions/third-party/world-book-generator/${MANIFEST_PATH}`;
 
 let localVersion;
 let remoteVersion;
@@ -20,17 +16,19 @@ let remoteVersion;
  * @returns {Promise<string>} The content of the file.
  */
 async function fetchRawFileContentFromGitHub(filePath) {
-    const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
+    // Use the SillyTavern proxy to bypass CORS issues
+    const proxyUrl = `/api/proxy?url=${encodeURIComponent(rawUrl)}`;
     const headers = { 'Cache-Control': 'no-cache' };
 
     try {
-        const response = await fetch(url, { method: 'GET', headers });
+        const response = await fetch(proxyUrl, { method: 'GET', headers });
         if (!response.ok) {
-            throw new Error(`Failed to fetch from GitHub: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch from GitHub via proxy: ${response.status} ${response.statusText}`);
         }
         return await response.text();
     } catch (error) {
-        console.error('[WBG-Updater] Error fetching file from GitHub:', error);
+        console.error('[WBG-Updater] Error fetching file from GitHub via proxy:', error);
         throw error;
     }
 }
@@ -118,6 +116,14 @@ export async function checkForUpdates() {
  * Triggers the SillyTavern backend to update the extension.
  */
 async function triggerUpdate() {
+    const { getRequestHeaders } = SillyTavern.getContext();
+    const toastr = window.toastr;
+
+    if (!toastr) {
+        console.error('[WBG-Updater] Toastr not available.');
+        return;
+    }
+
     toastr.info(`[一键做卡工具] 发现新版本 ${remoteVersion}，正在后台静默更新...`);
     try {
         const response = await fetch('/api/extensions/update', {
