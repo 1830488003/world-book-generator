@@ -29,13 +29,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999999999;
+    z-index: 1050; /* 降低z-index到一个合理的高度，避免与顶栏冲突 */
     user-select: none; /* 防止拖动时选中文本 */
 }
 
 /* 弹窗遮罩 */
 #wbg-popup-overlay {
-    display: none;
+    display: none; /* 默认隐藏 */
     position: fixed;
     top: 0;
     left: 0;
@@ -43,12 +43,13 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
     z-index: 1001;
+    /* 将flex布局直接放在这里，而不是通过class切换，避免影响外部 */
     justify-content: center;
-    align-items: center; /* 默认桌面端居中 */
+    align-items: center;
 }
 
 .wbg-is-visible {
-    display: flex !important;
+    display: flex !important; /* 保持flex以居中，但这是问题所在，需要修改 */
 }
 
 /* 插件内部容器隐藏滚动条 */
@@ -75,20 +76,38 @@
     --primary-button-hover-bg: #007aff;
     /* --- End of theme variables --- */
 
-    position: relative;
+    /* --- 新的响应式布局 --- */
+    position: fixed !important;
+    z-index: 1002; /* 高于遮罩层 */
+    
+    /* 移动端优先 */
+    top: 5vh !important;
+    left: 5vw !important;
+    width: 90vw;
+    height: 90vh;
+
     background-color: var(--primary-bg);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='10' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
     color: var(--text-color);
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 80vw;
-    max-width: 1200px;
-    max-height: 90vh;
     box-sizing: border-box;
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+}
+
+/* 桌面端适配 */
+@media (min-width: 768px) {
+    #wbg-popup.popup-content {
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 80vw;
+        max-width: 1200px;
+        height: 90vh;
+    }
 }
 
 /* 关闭按钮容器 */
@@ -192,26 +211,7 @@
     margin-bottom: 0;
 }
 
-/* --- 移动端适配：采纳用户建议，确保安全显示 --- */
-@media (max-width: 600px) {
-    #wbg-popup-overlay {
-        align-items: flex-start; /* 让弹窗从顶部开始对齐 */
-    }
-
-    #wbg-popup.popup-content {
-        width: 95vw;
-        max-height: 85vh; /* 严格限制最大高度，确保不会超出屏幕 */
-        margin-top: 5vh; /* 与屏幕顶部留出安全距离 */
-    }
-
-    .wbg-modal.wbg-is-visible {
-        align-items: flex-start; /* 移动端顶部对齐 */
-    }
-
-    .wbg-modal-content {
-        margin-top: 10vh; /* 移动端增加上边距 */
-    }
-}
+/* --- (旧的移动端适配已被新的响应式布局取代) --- */
 
 /* 阶段样式 */
 .wbg-stage {
