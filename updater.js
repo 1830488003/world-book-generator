@@ -1,4 +1,6 @@
-// SillyTavern Extension Updater for GitHub repositories
+//
+// SillyTavern Extension Updater - Based on a working example from JS-Slash-Runner
+//
 
 const GITHUB_USER = '1830488003';
 const GITHUB_REPO = 'world-book-generator';
@@ -11,24 +13,25 @@ let localVersion;
 let remoteVersion;
 
 /**
- * Fetches raw file content from the GitHub repository.
+ * Fetches raw file content from the GitHub repository using the official API.
  * @param {string} filePath - The path to the file in the repository.
  * @returns {Promise<string>} The content of the file.
  */
 async function fetchRawFileContentFromGitHub(filePath) {
-    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
-    // Use the SillyTavern proxy to bypass CORS issues
-    const proxyUrl = `/api/proxy?url=${encodeURIComponent(rawUrl)}`;
-    const headers = { 'Cache-Control': 'no-cache' };
+    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filePath}?ref=${GITHUB_BRANCH}`;
+    const headers = {
+        'Accept': 'application/vnd.github.v3.raw',
+        'Cache-Control': 'no-cache',
+    };
 
     try {
-        const response = await fetch(proxyUrl, { method: 'GET', headers });
+        const response = await fetch(url, { method: 'GET', headers });
         if (!response.ok) {
-            throw new Error(`Failed to fetch from GitHub via proxy: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch from GitHub API: ${response.status} ${response.statusText}`);
         }
         return await response.text();
     } catch (error) {
-        console.error('[WBG-Updater] Error fetching file from GitHub via proxy:', error);
+        console.error('[WBG-Updater] Error fetching file from GitHub:', error);
         throw error;
     }
 }
@@ -77,38 +80,17 @@ function compareSemVer(versionA, versionB) {
 async function getLocalVersion() {
     if (localVersion) return localVersion;
     try {
-        const response = await fetch(LOCAL_MANIFEST_PATH, { cache: 'no-store' });
+        const response = await fetch(`${LOCAL_MANIFEST_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`Could not fetch local manifest: ${response.statusText}`);
+        }
         const content = await response.text();
         localVersion = parseVersionFromFile(content);
         return localVersion;
     } catch (error) {
         console.error('[WBG-Updater] Could not get local version.', error);
+        // Return a base version to allow updates even if local check fails
         return '0.0.0';
-    }
-}
-
-/**
- * Checks for updates and automatically triggers the update if a new version is available.
- */
-export async function checkForUpdates() {
-    try {
-        const [local, remoteManifest] = await Promise.all([
-            getLocalVersion(),
-            fetchRawFileContentFromGitHub(MANIFEST_PATH),
-        ]);
-
-        remoteVersion = parseVersionFromFile(remoteManifest);
-
-        console.log(`[WBG-Updater] Local version: ${local}, Remote version: ${remoteVersion}`);
-
-        if (compareSemVer(remoteVersion, local) > 0) {
-            console.log(`[WBG-Updater] New version ${remoteVersion} available! Triggering automatic update.`);
-            await triggerUpdate();
-        } else {
-            console.log('[WBG-Updater] Already up to date.');
-        }
-    } catch (error) {
-        console.error('[WBG-Updater] Update check failed:', error);
     }
 }
 
@@ -131,7 +113,7 @@ async function triggerUpdate() {
             headers: getRequestHeaders(),
             body: JSON.stringify({
                 extensionName: 'world-book-generator',
-                global: false, // It's a local extension
+                global: false,
             }),
         });
 
@@ -142,7 +124,6 @@ async function triggerUpdate() {
 
         const data = await response.json();
         if (data.isUpToDate) {
-            // This case should ideally not be hit if compareSemVer is correct, but as a fallback:
             console.log('[WBG-Updater] Extension is already up to date.');
         } else {
             toastr.success('[一键做卡工具] 已成功更新至最新版本！页面将在3秒后自动刷新以应用更改。');
@@ -151,5 +132,32 @@ async function triggerUpdate() {
     } catch (error) {
         console.error('[WBG-Updater] Update failed:', error);
         toastr.error(`[一键做卡工具] 自动更新失败: ${error.message}`);
+    }
+}
+
+
+/**
+ * Checks for updates and automatically triggers the update if a new version is available.
+ */
+export async function checkForUpdates() {
+    console.log('[WBG-Updater] Checking for updates...');
+    try {
+        const [local, remoteManifest] = await Promise.all([
+            getLocalVersion(),
+            fetchRawFileContentFromGitHub(MANIFEST_PATH),
+        ]);
+
+        remoteVersion = parseVersionFromFile(remoteManifest);
+
+        console.log(`[WBG-Updater] Local version: ${local}, Remote version: ${remoteVersion}`);
+
+        if (compareSemVer(remoteVersion, local) > 0) {
+            console.log(`[WBG-Updater] New version ${remoteVersion} available! Triggering automatic update.`);
+            await triggerUpdate();
+        } else {
+            console.log('[WBG-Updater] Already up to date.');
+        }
+    } catch (error) {
+        console.error('[WBG-Updater] Update check failed:', error);
     }
 }
