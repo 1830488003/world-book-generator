@@ -1,5 +1,5 @@
 //
-// SillyTavern Extension Updater - Based on a working example from JS-Slash-Runner
+// SillyTavern Extension Updater - Simplified Manual Update Notification
 //
 
 const GITHUB_USER = '1830488003';
@@ -88,66 +88,34 @@ async function getLocalVersion() {
         return localVersion;
     } catch (error) {
         console.error('[WBG-Updater] Could not get local version.', error);
-        // Return a base version to allow updates even if local check fails
-        return '0.0.0';
+        return '0.0.0'; // Fallback
     }
 }
 
 /**
- * Triggers the SillyTavern backend to update the extension.
+ * Shows a toast notification instructing the user to update manually.
  */
-async function triggerUpdate() {
-    const { getRequestHeaders } = SillyTavern.getContext();
+function showUpdateNotification() {
     const toastr = window.toastr;
-
     if (!toastr) {
         console.error('[WBG-Updater] Toastr not available.');
         return;
     }
 
-    toastr.info(`[一键做卡工具] 发现新版本 ${remoteVersion}，正在尝试后台更新...`, '检查更新');
+    const message = `请点击右上角扩展菜单 -> 管理扩展，然后找到【一键做卡工具】并点击右侧的下载按钮进行更新。`;
+    const title = `发现新版本 v${remoteVersion}`;
 
-    try {
-        const payload = {
-            extensionName: 'world-book-generator',
-            global: true,
-        };
-        console.log('[WBG-Updater] Calling /api/extensions/update with payload:', JSON.stringify(payload));
-        toastr.info('正在向服务器发送更新指令...', '更新流程');
-
-        const response = await fetch('/api/extensions/update', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            body: JSON.stringify(payload),
-        });
-
-        console.log('[WBG-Updater] Received response from /api/extensions/update:', response);
-        toastr.info(`收到服务器响应: ${response.status} ${response.statusText}`, '更新流程');
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || response.statusText);
-        }
-
-        const data = await response.json();
-        console.log('[WBG-Updater] Parsed response data:', data);
-
-        if (data.isUpToDate) {
-            console.warn('[WBG-Updater] Backend reported extension is already up to date, despite version mismatch.');
-            toastr.warning(`服务器报告扩展已是最新版本。这可能是一个临时缓存问题。如果持续看到此消息，请尝试在扩展设置中手动更新。`, '更新未执行', { timeOut: 10000 });
-        } else {
-            toastr.success(`[一键做卡工具] 已成功更新至 ${data.shortCommitHash}！页面将在3秒后自动刷新以应用更改。`, '更新成功！');
-            setTimeout(() => location.reload(), 3000);
-        }
-    } catch (error) {
-        console.error('[WBG-Updater] Update failed:', error);
-        toastr.error(`[一键做卡工具] 自动更新失败: ${error.message}`, '更新失败', { timeOut: 10000 });
-    }
+    toastr.info(message, title, {
+        timeOut: 30000, // 30 seconds
+        extendedTimeOut: 10000,
+        closeButton: true,
+        tapToDismiss: false,
+    });
 }
 
 
 /**
- * Checks for updates and automatically triggers the update if a new version is available.
+ * Checks for updates and notifies the user if a new version is available.
  */
 export async function checkForUpdates() {
     console.log('[WBG-Updater] Checking for updates...');
@@ -162,8 +130,8 @@ export async function checkForUpdates() {
         console.log(`[WBG-Updater] Local version: ${local}, Remote version: ${remoteVersion}`);
 
         if (compareSemVer(remoteVersion, local) > 0) {
-            console.log(`[WBG-Updater] New version ${remoteVersion} available! Triggering automatic update.`);
-            await triggerUpdate();
+            console.log(`[WBG-Updater] New version ${remoteVersion} available! Notifying user.`);
+            showUpdateNotification();
         } else {
             console.log('[WBG-Updater] Already up to date.');
         }
