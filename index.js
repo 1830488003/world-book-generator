@@ -1,3 +1,5 @@
+import { checkForUpdates } from './updater.js';
+
 // 使用 jQuery 确保在 DOM 加载完毕后执行我们的代码
 jQuery(async () => {
     // -----------------------------------------------------------------
@@ -160,159 +162,6 @@ jQuery(async () => {
         }
     }
 
-    // -----------------------------------------------------------------
-    // 2. 更新检查器
-    // -----------------------------------------------------------------
-    class WBGUpdater {
-        constructor() {
-            this.owner = '1830488003';
-            this.repo = 'world-book-generator';
-            this.currentVersion = '';
-            this.latestVersion = '';
-            this.storageKey = 'wbg_auto_update_enabled';
-            this.elements = {};
-        }
-
-        async init() {
-            try {
-                const manifestUrl = `/${extensionFolderPath}/manifest.json?v=${Date.now()}`;
-                const response = await fetch(manifestUrl);
-                if (!response.ok) {
-                    throw new Error(
-                        `无法加载本地 manifest: ${response.statusText}`,
-                    );
-                }
-                const manifest = await response.json();
-                this.currentVersion = manifest.version;
-
-                this.elements = {
-                    versionDisplay: document.getElementById(
-                        'wbg-current-version',
-                    ),
-                    checkButton: document.getElementById(
-                        'wbg-check-update-button',
-                    ),
-                    autoUpdateToggle: document.getElementById(
-                        'wbg-auto-update-toggle',
-                    ),
-                };
-
-                if (this.elements.versionDisplay) {
-                    this.elements.versionDisplay.textContent = `v${this.currentVersion}`;
-                }
-
-                this.loadSettings();
-                this.setupEventListeners();
-
-                // if (this.elements.autoUpdateToggle.checked) {
-                //     this.checkForUpdates(false);
-                // }
-            } catch (error) {
-                console.error('WBGUpdater 初始化失败:', error);
-                if (toastr)
-                    toastr.error(`更新检查器初始化失败: ${error.message}`);
-            }
-        }
-
-        setupEventListeners() {
-            if (!this.elements.checkButton || !this.elements.autoUpdateToggle)
-                return;
-
-            this.elements.checkButton.addEventListener('click', () =>
-                this.checkForUpdates(true),
-            );
-            this.elements.autoUpdateToggle.addEventListener('change', (e) => {
-                localStorage.setItem(this.storageKey, e.target.checked);
-                if (e.target.checked) {
-                    if (toastr) toastr.success('已开启自动更新检查。');
-                    this.checkForUpdates(false);
-                } else {
-                    if (toastr) toastr.info('已关闭自动更新检查。');
-                }
-            });
-        }
-
-        loadSettings() {
-            if (!this.elements.autoUpdateToggle) return;
-            const autoUpdateEnabled = localStorage.getItem(this.storageKey);
-            this.elements.autoUpdateToggle.checked =
-                autoUpdateEnabled !== 'false';
-        }
-
-        async checkForUpdates(manual = false) {
-            if (manual) {
-                if (toastr) toastr.info('正在检查更新...');
-                this.elements.checkButton.disabled = true;
-                this.elements.checkButton.innerHTML =
-                    '<i class="fas fa-spinner fa-spin"></i> 检查中...';
-            }
-            try {
-                const response = await fetch(
-                    `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/manifest.json?v=${new Date().getTime()}`,
-                );
-                if (!response.ok) {
-                    throw new Error(
-                        `从 Github 获取 manifest 失败: ${response.statusText}`,
-                    );
-                }
-                const remoteManifest = await response.json();
-                this.latestVersion = remoteManifest.version;
-
-                console.log(
-                    `[${extensionName}] 当前版本: ${this.currentVersion}, 最新版本: ${this.latestVersion}`,
-                );
-
-                if (
-                    this.compareVersions(
-                        this.latestVersion,
-                        this.currentVersion,
-                    ) > 0
-                ) {
-                    const releaseUrl = `https://github.com/${this.owner}/${this.repo}/`;
-                    if (toastr) {
-                        toastr.success(
-                            `发现新版本 v${this.latestVersion}！点击这里前往Github仓库页面。`,
-                            '更新提示',
-                            {
-                                onclick: () =>
-                                    window.open(releaseUrl, '_blank'),
-                                timeOut: 0,
-                                extendedTimeOut: 0,
-                            },
-                        );
-                    }
-                } else if (manual) {
-                    if (toastr) toastr.success('您当前使用的是最新版本。');
-                }
-            } catch (error) {
-                console.error('WBGUpdater: 检查更新失败', error);
-                if (manual && toastr) {
-                    toastr.error(
-                        `检查更新失败: ${error.message}。请稍后再试或查看浏览器控制台获取更多信息。`,
-                    );
-                }
-            } finally {
-                if (manual) {
-                    this.elements.checkButton.disabled = false;
-                    this.elements.checkButton.innerHTML =
-                        '<i class="fa-solid fa-cloud-arrow-down"></i> 检查更新';
-                }
-            }
-        }
-
-        compareVersions(v1, v2) {
-            const parts1 = v1.split('.').map(Number);
-            const parts2 = v2.split('.').map(Number);
-            const len = Math.max(parts1.length, parts2.length);
-            for (let i = 0; i < len; i++) {
-                const p1 = parts1[i] || 0;
-                const p2 = parts2[i] || 0;
-                if (p1 > p2) return 1;
-                if (p1 < p2) return -1;
-            }
-            return 0;
-        }
-    }
 
     // -----------------------------------------------------------------
     // 新增：2.5 设置管理
@@ -2286,8 +2135,8 @@ jQuery(async () => {
 
         // 在HTML加载后，初始化更新器
         console.log(`[${extensionName}] 7. 准备初始化更新检查器...`);
-        const updater = new WBGUpdater();
-        await updater.init();
+        // 替换为新的静默更新检查
+        checkForUpdates();
         console.log(`[${extensionName}] 8. 更新检查器初始化成功。`);
 
         fab.on('click', async () => {
@@ -2310,13 +2159,9 @@ jQuery(async () => {
 
                 // 任务二：在前一个任务完成后，再开始检查更新
                 try {
-                    if (updater && updater.elements && updater.elements.autoUpdateToggle && updater.elements.autoUpdateToggle.checked) {
-                        console.log('[WBG] 后台任务#2: 开始检查更新...');
-                        await updater.checkForUpdates(false);
-                        console.log('[WBG] 后台任务#2: 检查更新完成。');
-                    } else {
-                        console.log('[WBG] 后台任务#2: 自动更新已关闭，跳过检查。');
-                    }
+                    console.log('[WBG] 后台任务#2: 开始检查更新...');
+                    await checkForUpdates();
+                    console.log('[WBG] 后台任务#2: 检查更新完成。');
                 } catch (error) {
                     console.error('[WBG] 后台检查更新时捕获到顶层错误:', error);
                 }

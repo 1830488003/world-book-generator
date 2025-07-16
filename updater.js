@@ -2,19 +2,17 @@
 
 import { getRequestHeaders } from '/scripts/script.js';
 import { extension_settings } from '/scripts/extensions.js';
-import { callPopup, POPUP_TYPE } from '/scripts/ui.js';
+import { toastr } from '/scripts/ui.js';
 
 const GITHUB_USER = '1830488003';
 const GITHUB_REPO = 'world-book-generator';
 const GITHUB_BRANCH = 'main';
 const MANIFEST_PATH = 'manifest.json';
-const CHANGELOG_PATH = 'CHANGELOG.md'; // Assuming you will create this file
 
 const LOCAL_MANIFEST_PATH = `/extensions/third-party/world-book-generator/${MANIFEST_PATH}`;
 
 let localVersion;
 let remoteVersion;
-let changelogContent;
 
 /**
  * Fetches raw file content from the GitHub repository.
@@ -92,7 +90,7 @@ async function getLocalVersion() {
 }
 
 /**
- * Checks for updates and displays a notification if a new version is available.
+ * Checks for updates and automatically triggers the update if a new version is available.
  */
 export async function checkForUpdates() {
     try {
@@ -106,20 +104,13 @@ export async function checkForUpdates() {
         console.log(`[WBG-Updater] Local version: ${local}, Remote version: ${remoteVersion}`);
 
         if (compareSemVer(remoteVersion, local) > 0) {
-            console.log('[WBG-Updater] New version available!');
-            // You can implement a UI notification here, e.g., showing a dot on the settings icon.
-            // For now, let's just log it and prepare the changelog.
-            try {
-                changelogContent = await fetchRawFileContentFromGitHub(CHANGELOG_PATH);
-            } catch {
-                changelogContent = '无法加载更新日志。';
-            }
-            return true; // Indicates an update is available
+            console.log(`[WBG-Updater] New version ${remoteVersion} available! Triggering automatic update.`);
+            await triggerUpdate();
+        } else {
+            console.log('[WBG-Updater] Already up to date.');
         }
-        return false; // No update
     } catch (error) {
         console.error('[WBG-Updater] Update check failed:', error);
-        return false;
     }
 }
 
@@ -127,14 +118,14 @@ export async function checkForUpdates() {
  * Triggers the SillyTavern backend to update the extension.
  */
 async function triggerUpdate() {
-    toastr.info('正在开始更新，请稍候...');
+    toastr.info(`[一键做卡工具] 发现新版本 ${remoteVersion}，正在后台静默更新...`);
     try {
         const response = await fetch('/api/extensions/update', {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
                 extensionName: 'world-book-generator',
-                global: false, // Assuming it's a local extension
+                global: false, // It's a local extension
             }),
         });
 
@@ -145,37 +136,14 @@ async function triggerUpdate() {
 
         const data = await response.json();
         if (data.isUpToDate) {
-            toastr.warning('插件已经是最新版本。');
+            // This case should ideally not be hit if compareSemVer is correct, but as a fallback:
+            console.log('[WBG-Updater] Extension is already up to date.');
         } else {
-            toastr.success('更新成功！页面将在3秒后刷新。');
+            toastr.success('[一键做卡工具] 已成功更新至最新版本！页面将在3秒后自动刷新以应用更改。');
             setTimeout(() => location.reload(), 3000);
         }
     } catch (error) {
         console.error('[WBG-Updater] Update failed:', error);
-        toastr.error(`更新失败: ${error.message}`);
+        toastr.error(`[一键做卡工具] 自动更新失败: ${error.message}`);
     }
-}
-
-/**
- * Shows a popup with the changelog and an update button.
- */
-export function showUpdatePopup() {
-    const popupContent = `
-        <div>
-            <h3>发现新版本: ${remoteVersion}</h3>
-            <hr>
-            <h4>更新日志:</h4>
-            <div style="max-height: 300px; overflow-y: auto; background: var(--bg1); padding: 10px; border-radius: 5px;">
-                ${changelogContent.replace(/\n/g, '<br>')}
-            </div>
-        </div>
-    `;
-
-    callPopup(popupContent, POPUP_TYPE.CONFIRM, {
-        okButton: '立即更新',
-        cancelButton: '稍后',
-        onconfirm: () => {
-            triggerUpdate();
-        },
-    });
 }
