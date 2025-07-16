@@ -21,7 +21,6 @@ async function fetchRawFileContentFromGitHub(filePath) {
     const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filePath}?ref=${GITHUB_BRANCH}`;
     const headers = {
         'Accept': 'application/vnd.github.v3.raw',
-        'Cache-Control': 'no-cache',
     };
 
     try {
