@@ -18,19 +18,17 @@ let remoteVersion;
  * @returns {Promise<string>} The content of the file.
  */
 async function fetchRawFileContentFromGitHub(filePath) {
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filePath}?ref=${GITHUB_BRANCH}`;
-    const headers = {
-        'Accept': 'application/vnd.github.v3.raw',
-    };
+    const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
 
     try {
-        const response = await fetch(url, { method: 'GET', headers });
+        // Add a cache-busting query parameter
+        const response = await fetch(`${url}?t=${Date.now()}`);
         if (!response.ok) {
-            throw new Error(`Failed to fetch from GitHub API: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch raw file from GitHub: ${response.status} ${response.statusText}`);
         }
         return await response.text();
     } catch (error) {
-        console.error('[WBG-Updater] Error fetching file from GitHub:', error);
+        console.error('[WBG-Updater] Error fetching raw file from GitHub:', error);
         throw error;
     }
 }
