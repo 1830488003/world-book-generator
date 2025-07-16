@@ -22,67 +22,68 @@
             <p>
                 <b>联系方式:</b> 角色卡QQ群1: 118774271 | 角色卡QQ群2: 705941358
             </p>
-        </div>
-    </div>
 
+            <hr />
 
-    <hr />
+            <!-- AI 源选择 -->
+            <div class="setting_item">
+                <label for="wbg-ai-source">AI 源</label>
+                <select id="wbg-ai-source" class="text_pole">
+                    <option value="tavern">酒馆 AI (Tavern AI)</option>
+                    <option value="custom">自定义 AI (Custom AI)</option>
+                </select>
+            </div>
 
-    <!-- AI 源选择 -->
-    <div class="setting_item">
-        <label for="wbg-ai-source">AI 源</label>
-        <select id="wbg-ai-source" class="text_pole">
-            <option value="tavern">酒馆 AI (Tavern AI)</option>
-            <option value="custom">自定义 AI (Custom AI)</option>
-        </select>
-    </div>
+            <!-- 自定义AI配置区域，默认隐藏 -->
+            <div id="wbg-custom-api-settings" class="hidden">
+                <div class="setting_item">
+                    <label for="wbg-api-url">API 基础URL</label>
+                    <input
+                        id="wbg-api-url"
+                        type="text"
+                        class="text_pole"
+                        placeholder="例如: http://127.0.0.1:5001/v1"
+                    />
+                </div>
+                <div class="setting_item">
+                    <label for="wbg-api-key">API 密钥 (可选)</label>
+                    <input
+                        id="wbg-api-key"
+                        type="password"
+                        class="text_pole"
+                        placeholder="如果需要的话，请输入API Key"
+                    />
+                </div>
+                <div class="setting_item">
+                    <label for="wbg-api-model">模型名称</label>
+                    <div class="flex-container">
+                        <select id="wbg-api-model" class="text_pole"></select>
+                        <button
+                            id="wbg-fetch-models"
+                            class="menu_button fa-solid fa-arrows-rotate"
+                            title="加载模型列表"
+                        ></button>
+                    </div>
+                </div>
+                <div class="setting_item">
+                    <button id="wbg-save-api" class="menu_button">
+                        保存自定义API
+                    </button>
+                </div>
+            </div>
 
-    <!-- 自定义AI配置区域，默认隐藏 -->
-    <div id="wbg-custom-api-settings" class="hidden">
-        <div class="setting_item">
-            <label for="wbg-api-url">API 基础URL</label>
-            <input
-                id="wbg-api-url"
-                type="text"
-                class="text_pole"
-                placeholder="例如: http://127.0.0.1:5001/v1"
-            />
-        </div>
-        <div class="setting_item">
-            <label for="wbg-api-key">API 密钥 (可选)</label>
-            <input
-                id="wbg-api-key"
-                type="password"
-                class="text_pole"
-                placeholder="如果需要的话，请输入API Key"
-            />
-        </div>
-        <div class="setting_item">
-            <label for="wbg-api-model">模型名称</label>
-            <div class="flex-container">
-                <select id="wbg-api-model" class="text_pole"></select>
-                <button
-                    id="wbg-fetch-models"
-                    class="menu_button fa-solid fa-arrows-rotate"
-                    title="加载模型列表"
-                ></button>
+            <hr />
+
+            <!-- 版本更新区域 -->
+            <div class="wbg-version-panel">
+                <p>
+                    当前版本:
+                    <span id="wbg-current-version">1.0.0</span>
+                </p>
+                <button id="wbg-check-update-button" class="menu_button">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
+                </button>
             </div>
         </div>
-        <div class="setting_item">
-            <button id="wbg-save-api" class="menu_button">保存自定义API</button>
-        </div>
-    </div>
-
-    <hr />
-
-    <!-- 版本更新区域 -->
-    <div class="wbg-version-panel">
-        <p>
-            当前版本:
-            <span id="wbg-current-version">1.0.0</span>
-        </p>
-        <button id="wbg-check-update-button" class="menu_button">
-            <i class="fa-solid fa-cloud-arrow-down"></i> 检查更新
-        </button>
     </div>
 </div>
