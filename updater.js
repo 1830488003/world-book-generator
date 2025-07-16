@@ -105,16 +105,24 @@ async function triggerUpdate() {
         return;
     }
 
-    toastr.info(`[一键做卡工具] 发现新版本 ${remoteVersion}，正在后台静默更新...`);
+    toastr.info(`[一键做卡工具] 发现新版本 ${remoteVersion}，正在尝试后台更新...`, '检查更新');
+
     try {
+        const payload = {
+            extensionName: 'world-book-generator',
+            global: true,
+        };
+        console.log('[WBG-Updater] Calling /api/extensions/update with payload:', JSON.stringify(payload));
+        toastr.info('正在向服务器发送更新指令...', '更新流程');
+
         const response = await fetch('/api/extensions/update', {
             method: 'POST',
             headers: getRequestHeaders(),
-            body: JSON.stringify({
-                extensionName: 'world-book-generator',
-                global: true,
-            }),
+            body: JSON.stringify(payload),
         });
+
+        console.log('[WBG-Updater] Received response from /api/extensions/update:', response);
+        toastr.info(`收到服务器响应: ${response.status} ${response.statusText}`, '更新流程');
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -122,15 +130,18 @@ async function triggerUpdate() {
         }
 
         const data = await response.json();
+        console.log('[WBG-Updater] Parsed response data:', data);
+
         if (data.isUpToDate) {
-            console.log('[WBG-Updater] Extension is already up to date.');
+            console.warn('[WBG-Updater] Backend reported extension is already up to date, despite version mismatch.');
+            toastr.warning(`服务器报告扩展已是最新版本。这可能是一个临时缓存问题。如果持续看到此消息，请尝试在扩展设置中手动更新。`, '更新未执行', { timeOut: 10000 });
         } else {
-            toastr.success('[一键做卡工具] 已成功更新至最新版本！页面将在3秒后自动刷新以应用更改。');
+            toastr.success(`[一键做卡工具] 已成功更新至 ${data.shortCommitHash}！页面将在3秒后自动刷新以应用更改。`, '更新成功！');
             setTimeout(() => location.reload(), 3000);
         }
     } catch (error) {
         console.error('[WBG-Updater] Update failed:', error);
-        toastr.error(`[一键做卡工具] 自动更新失败: ${error.message}`);
+        toastr.error(`[一键做卡工具] 自动更新失败: ${error.message}`, '更新失败', { timeOut: 10000 });
     }
 }
 
