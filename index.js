@@ -2432,63 +2432,32 @@ jQuery(async () => {
       console.log(`[${extensionName}] 检测到 ${pendingOrders.length} 个待处理的支付订单，正在检查...`);
 
       let totalCompensatedCredits = 0;
-      const maxFailures = 20; // 设置最大失败次数阈值
-      let ordersModified = false;
+      const completedOrderIds = [];
 
       for (const order of pendingOrders) {
-        const orderId = order.id;
         try {
-          const response = await fetch(`${PAYMENT_SERVER_URL}/api/order-status?orderId=${orderId}`);
+          const response = await fetch(`${PAYMENT_SERVER_URL}/api/order-status?orderId=${order.id}`);
           if (response.ok) {
             const data = await response.json();
             if (data.status === 'completed') {
               creditManager.add(data.credits, false);
               totalCompensatedCredits += data.credits;
-              // 标记为待删除，而不是直接修改数组
-              order.toDelete = true;
-              ordersModified = true;
-              console.log(`[${extensionName}] 订单 ${orderId} 已支付，成功补偿 ${data.credits} 次。`);
-            }
-            // 如果查询成功，重置失败计数器
-            if (order.failures > 0) {
-              order.failures = 0;
-              ordersModified = true;
+              completedOrderIds.push(order.id);
+              console.log(`[${extensionName}] 订单 ${order.id} 已支付，成功补偿 ${data.credits} 次。`);
             }
           } else if (response.status === 404) {
-            console.log(`[${extensionName}] 订单 ${orderId} 在服务器上未找到(404)，将从本地永久移除。`);
-            order.toDelete = true;
-            ordersModified = true;
-          } else {
-            // 其他HTTP错误（如500），增加失败计数
-            order.failures++;
-            ordersModified = true;
-            console.warn(
-              `[${extensionName}] 检查订单 ${orderId} 时服务器返回错误 ${response.status}。失败次数: ${order.failures}`,
-            );
+            console.log(`[${extensionName}] 订单 ${order.id} 在服务器上未找到(404)，将从本地永久移除。`);
+            completedOrderIds.push(order.id);
           }
         } catch (error) {
-          // 网络错误，增加失败计数
-          order.failures++;
-          ordersModified = true;
-          console.error(`[${extensionName}] 检查待处理订单 ${orderId} 时发生网络错误:`, error.message);
-          console.warn(`[${extensionName}] 订单 ${orderId} 失败次数: ${order.failures}`);
-        }
-
-        // 检查是否达到最大失败次数
-        if (order.failures >= maxFailures) {
-          console.warn(
-            `[${extensionName}] 订单 ${orderId} 已达到最大失败次数 (${maxFailures})，将从本地移除以防垃圾信息。`,
-          );
-          order.toDelete = true;
-          ordersModified = true;
+          console.error(`[${extensionName}] 检查待处理订单 ${order.id} 时发生网络错误:`, error.message);
         }
       }
 
-      // 统一处理本地存储的更新
-      if (ordersModified) {
-        let updatedOrders = pendingOrders.filter(order => !order.toDelete);
-        // 清理掉临时的 toDelete 属性
-        updatedOrders.forEach(order => delete order.toDelete);
+      // 循环结束后，统一移除所有已完成或404的订单
+      if (completedOrderIds.length > 0) {
+        let currentOrders = this.getPendingOrders();
+        let updatedOrders = currentOrders.filter(order => !completedOrderIds.includes(order.id));
         localStorage.setItem(this.pendingOrdersKey, JSON.stringify(updatedOrders));
       }
 
