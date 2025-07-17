@@ -42,14 +42,12 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1001;
-    /* 将flex布局直接放在这里，而不是通过class切换，避免影响外部 */
-    justify-content: center;
-    align-items: center;
+    z-index: 9998; /* 大幅提高z-index */
+    /* 移除flex布局，弹窗的居中由其自身样式控制 */
 }
 
 .wbg-is-visible {
-    display: flex !important; /* 保持flex以居中，但这是问题所在，需要修改 */
+    display: block !important; /* 恢复为块级元素 */
 }
 
 /* 插件内部容器隐藏滚动条 */
@@ -78,7 +76,7 @@
 
     /* --- 新的响应式布局 --- */
     position: fixed !important;
-    z-index: 1002; /* 高于遮罩层 */
+    z-index: 9999; /* 大幅提高z-index，确保在最前 */
     
     /* 移动端优先 */
     top: 5vh !important;
@@ -143,7 +141,7 @@
 
 /* 内容容器，使其可滚动 */
 #wbg-content-container {
-    flex-grow: 1;
+    /* flex-grow: 1;  <-- 移除此行来修复对齐问题 */
     overflow-y: auto;
     padding-right: 10px;
     margin-right: -10px;
@@ -671,7 +669,7 @@ input:checked + .wbg-slider:before {
 .wbg-modal {
     display: none; /* Initially hidden */
     position: fixed;
-    z-index: 2000;
+    z-index: 10000; /* 确保充值弹窗在最顶层 */
     left: 0;
     top: 0;
     width: 100%;
