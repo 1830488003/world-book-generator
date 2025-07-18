@@ -2127,10 +2127,54 @@ jQuery(async () => {
     populateDetailOptions();
     populateMechanicsOptions();
 
-    // --- 全面重构：计次与充值功能初始化 ---
-    creditManager.init();
-    rechargeManager.init();
+  // --- 全面重构：计次与充值功能初始化 ---
+  creditManager.init();
+  rechargeManager.init();
+  userManager.init(); // 新增：初始化用户管理器
   }
+
+  // --- 新增：用户数据管理器 ---
+  const userManager = {
+      userId: null,
+      storageKey: 'wbg_user_id',
+
+      async init() {
+          this.userId = localStorage.getItem(this.storageKey);
+          // 无论用户ID是否存在，都在启动时同步一次数据
+          // 如果ID不存在，服务器会创建一个新的并返回
+          await this.sync();
+      },
+
+      async sync() {
+          try {
+              const response = await fetch(`${PAYMENT_SERVER_URL}/api/update-user`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId: this.userId,
+                      credits: creditManager.get(),
+                  }),
+              });
+
+              if (!response.ok) {
+                  throw new Error(`服务器错误: ${response.status}`);
+              }
+
+              const data = await response.json();
+              if (data.success && data.userId) {
+                  // 如果服务器返回了userId（特别是对于新用户），则更新并保存它
+                  if (this.userId !== data.userId) {
+                      this.userId = data.userId;
+                      localStorage.setItem(this.storageKey, this.userId);
+                      console.log(`[UserManager] 已从服务器获取并保存新用户ID: ${this.userId}`);
+                  }
+              }
+          } catch (error) {
+              console.error('[UserManager] 同步用户数据失败:', error);
+              // 在这里可以添加一些错误处理逻辑，比如稍后重试
+          }
+      },
+  };
 
   // --- 新增：计次系统管理器 ---
   const creditManager = {
@@ -2165,6 +2209,7 @@ jQuery(async () => {
       this.credits--;
       localStorage.setItem(this.storageKey, this.credits);
       this.updateDisplay();
+      userManager.sync(); // 同步到服务器
       return true; // 表示扣除成功
     },
 
@@ -2175,6 +2220,7 @@ jQuery(async () => {
       if (showToast) {
         toastr.success(`成功充值 ${amount} 次！`);
       }
+      userManager.sync(); // 同步到服务器
     },
 
     updateDisplay() {
